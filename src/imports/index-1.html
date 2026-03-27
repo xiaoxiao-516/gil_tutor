@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>小鹿爱学学管端 - Demo</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <!-- 登录页：仅支持手机号验证码登录 -->
+    <section id="loginPage" class="login-page hidden">
+      <div class="login-title">
+        <div class="brand-logo">鹿</div>
+        <h1>小鹿爱学学管端</h1>
+      </div>
+      <div class="login-card">
+        <div class="form-panel single">
+          <h3>请输入手机号登录</h3>
+          <p class="sub-text">仅支持手机验证码登录，用于演示学管端后台主流程。</p>
+          <form id="loginForm" class="login-form">
+            <label>
+              手机号
+              <input id="phone" type="text" placeholder="请输入手机号" required />
+            </label>
+            <label>
+              验证码
+              <div class="code-row">
+                <input id="verifyCode" type="text" placeholder="请输入验证码" required />
+                <button type="button" id="sendCodeBtn" class="ghost-btn">获取验证码</button>
+              </div>
+            </label>
+            <label class="agreement">
+              <input type="checkbox" checked />
+              我已阅读并同意《用户协议》和《隐私政策》
+            </label>
+            <button type="submit" class="primary-btn login-btn">登 录</button>
+          </form>
+        </div>
+        <p class="tip">Demo 提示：输入任意非空手机号和验证码即可进入。</p>
+      </div>
+    </section>
+
+    <!-- 主后台：登录成功后展示 -->
+    <section id="appPage" class="app-page">
+      <aside class="sidebar">
+        <div class="sidebar-head">
+          <div class="brand-logo sm">鹿</div>
+          <div>
+            <strong>小鹿爱学</strong>
+            <p>学管端 Demo</p>
+          </div>
+        </div>
+        <nav id="moduleNav" class="module-nav">
+          <section class="main-group">
+            <p class="main-group-title">
+              <span class="main-left">
+                <span class="dot"></span>
+                <span class="main-title-text">体验</span>
+              </span>
+              <span class="main-caret">⌄</span>
+            </p>
+            <button class="sub-nav-item active" data-main="experience" data-subtab="diagnosis">诊断管理</button>
+            <button class="sub-nav-item" data-main="experience" data-subtab="onboarding">新课建档</button>
+          </section>
+          <section class="main-group">
+            <p class="main-group-title">
+              <span class="main-left">
+                <span class="dot"></span>
+                <span class="main-title-text">督学</span>
+              </span>
+              <span class="main-caret">⌄</span>
+            </p>
+            <button class="sub-nav-item" data-main="supervision" data-subtab="taskMgmt">任务管理</button>
+            <button class="sub-nav-item" data-main="supervision" data-subtab="todayBoard">今日看板</button>
+          </section>
+          <section class="main-group">
+            <p class="main-group-title">
+              <span class="main-left">
+                <span class="dot"></span>
+                <span class="main-title-text">管理</span>
+              </span>
+              <span class="main-caret">⌄</span>
+            </p>
+            <button class="sub-nav-item" data-main="management" data-subtab="supervisorMgmt">督学管理</button>
+            <button class="sub-nav-item" data-main="insight" data-subtab="userInfo">用户信息</button>
+            <button class="sub-nav-item" data-main="insight" data-subtab="stageInsight">阶段学情</button>
+          </section>
+          <section class="main-group">
+            <p class="main-group-title">
+              <span class="main-left">
+                <span class="dot"></span>
+                <span class="main-title-text">资源</span>
+              </span>
+              <span class="main-caret">⌄</span>
+            </p>
+            <button class="sub-nav-item" data-main="resource" data-subtab="questionBank">题库</button>
+            <button class="sub-nav-item" data-main="resource" data-subtab="aiTools">智能工具</button>
+            <button class="sub-nav-item" data-main="resource" data-subtab="sopMgmt">SOP管理</button>
+          </section>
+        </nav>
+        <div class="sidebar-foot">
+          <p>当前账号：<span id="currentUser">学管老师</span></p>
+          <button id="logoutBtn" class="ghost-btn">退出登录</button>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <h2 id="pageTitle">诊断管理</h2>
+          </div>
+        </header>
+
+        <!-- 子tab内容区域 -->
+        <section class="subtab-panel" data-subpanel="diagnosis">
+          <article class="card">
+            <div class="card-head">
+              <h3>诊断管理</h3>
+              <span class="tag">诊断管理</span>
+            </div>
+            <div class="search-grid">
+              <label>姓名
+                <input id="searchName" type="text" placeholder="请输入学生姓名" />
+              </label>
+              <label>科目
+                <select id="searchSubject">
+                  <option value="">全部</option>
+                  <option>英语</option>
+                  <option>数学</option>
+                  <option>物理</option>
+                </select>
+              </label>
+              <label>测评完成时间周期
+                <select id="searchPeriod">
+                  <option value="">全部</option>
+                  <option>近7天</option>
+                  <option>近30天</option>
+                  <option>本月</option>
+                </select>
+              </label>
+              <label>测评结果
+                <select id="searchResult">
+                  <option value="">全部</option>
+                  <option>未开始</option>
+                  <option>进行中</option>
+                  <option>已完成</option>
+                </select>
+              </label>
+            </div>
+            <div class="action-row search-actions">
+              <button id="runSearchBtn" class="primary-btn">搜索</button>
+              <button id="resetSearchBtn" class="ghost-btn">重置</button>
+            </div>
+            <div class="toolbar-row">
+              <button id="openCreateEvalBtn" class="primary-btn">+ 新建诊断</button>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>学生姓名</th>
+                  <th>年级</th>
+                  <th>测评科目</th>
+                  <th>测评章节</th>
+                  <th>测评结果</th>
+                  <th>完成时间</th>
+                  <th>操作项</th>
+                  <th>原始诊断URL</th>
+                  <th>创始人</th>
+                  <th>创始时间</th>
+                </tr>
+              </thead>
+              <tbody id="diagnosisTableBody"></tbody>
+            </table>
+            <div class="pagination" id="diagnosisPagination">
+              <button id="prevPageBtn" class="ghost-btn">上一页</button>
+              <span id="pageInfo">共 0 条 · 第 1 / 1 页</span>
+              <button id="nextPageBtn" class="ghost-btn">下一页</button>
+            </div>
+          </article>
+        </section>
+
+        <section class="subtab-panel hidden" data-subpanel="onboarding">
+          <div class="placeholder-grid">
+            <article class="card">
+              <div class="card-head">
+                <h3>新课建档（占位）</h3>
+                <span class="tag">体验</span>
+              </div>
+              <p class="placeholder-text">后续承接建档流程、试听账号与方案配置。</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="subtab-panel hidden" data-subpanel="taskMgmt">
+          <article class="card task-assign-page">
+            <div class="card-head">
+              <h3>布置课程任务</h3>
+              <span class="tag">督学 · 任务管理</span>
+            </div>
+
+            <section class="task-step">
+              <h4>1. 选择布置对象</h4>
+              <p class="step-desc">在你负责的学生里单选一个作为本次布置对象。</p>
+              <div id="studentPicker" class="student-picker"></div>
+            </section>
+
+            <section class="task-step">
+              <h4>2. 设置学习时间</h4>
+              <p class="step-desc">例如本周六 14:00-16:00，系统将按该时长自动匹配任务量。</p>
+              <div class="time-config">
+                <label>学习日期
+                  <input id="taskDate" type="date" />
+                </label>
+                <label>开始时间
+                  <input id="taskStartTime" type="time" value="14:00" />
+                </label>
+                <label>结束时间
+                  <input id="taskEndTime" type="time" value="16:00" />
+                </label>
+                <button id="matchTasksBtn" class="primary-btn">匹配任务</button>
+              </div>
+            </section>
+
+            <section class="task-step">
+              <div class="task-list-head">
+                <div>
+                  <h4>3. 任务列表确认并发布</h4>
+                  <p id="taskMatchSummary" class="step-desc">先设置学习时间后，系统会自动勾选建议任务。</p>
+                </div>
+                <div class="task-head-actions">
+                  <button class="ghost-btn">新增任务</button>
+                  <button class="ghost-btn">调整</button>
+                </div>
+              </div>
+              <div id="taskPlanList" class="task-plan-list"></div>
+            </section>
+
+            <div class="task-actions">
+              <button id="publishTaskBtn" class="primary-btn">立即布置</button>
+            </div>
+          </article>
+        </section>
+
+        <section class="subtab-panel hidden" data-subpanel="todayBoard">
+          <div class="placeholder-grid">
+            <article class="card">
+              <div class="card-head">
+                <h3>今日看板（占位）</h3>
+                <span class="tag">督学</span>
+              </div>
+              <p class="placeholder-text">后续承接今日活跃、预警、响应时长和人效指标。</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="subtab-panel hidden" data-subpanel="supervisorMgmt">
+          <article class="card">
+            <div class="card-head">
+              <h3>督学管理</h3>
+              <span class="tag">管理</span>
+            </div>
+            <div class="toolbar-row">
+              <button id="createSupervisorBtn" class="primary-btn">+ 创建督学老师</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>姓名</th>
+                    <th>类型</th>
+                    <th>履约中</th>
+                    <th>在职时长</th>
+                    <th>操作项</th>
+                  </tr>
+                </thead>
+                <tbody id="supervisorTableBody"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+
+        <section class="subtab-panel hidden" data-subpanel="userInfo">
+          <article class="card">
+            <div class="card-head">
+              <h3>用户信息</h3>
+              <span class="tag">管理</span>
+            </div>
+            <div class="search-grid user-search-grid">
+              <label>姓名
+                <input id="userSearchName" type="text" placeholder="请输入用户姓名" />
+              </label>
+              <label>学段
+                <select id="userSearchStage">
+                  <option value="">全部学段</option>
+                  <option value="初一">初一</option>
+                  <option value="初二">初二</option>
+                  <option value="初三">初三</option>
+                  <option value="高一">高一</option>
+                  <option value="高二">高二</option>
+                  <option value="高三">高三</option>
+                </select>
+              </label>
+              <label>督学老师
+                <select id="userSearchTeacher">
+                  <option value="">全部老师</option>
+                  <option value="李小明老师">李小明老师</option>
+                  <option value="王晓彤老师">王晓彤老师</option>
+                  <option value="陈子涵老师">陈子涵老师</option>
+                  <option value="周嘉宁老师">周嘉宁老师</option>
+                  <option value="赵一帆老师">赵一帆老师</option>
+                </select>
+              </label>
+            </div>
+            <div class="action-row search-actions">
+              <button id="runUserSearchBtn" class="primary-btn">搜索</button>
+              <button id="resetUserSearchBtn" class="ghost-btn">重置</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>用户姓名</th>
+                    <th>学段</th>
+                    <th>地区（省/市）</th>
+                    <th>所购买学科</th>
+                    <th>督学老师</th>
+                    <th>激活时间</th>
+                    <th>到期时间</th>
+                    <th>操作项</th>
+                  </tr>
+                </thead>
+                <tbody id="userInfoTableBody"></tbody>
+              </table>
+            </div>
+            <div class="pagination">
+              <button id="userInfoPrevPageBtn" class="ghost-btn">上一页</button>
+              <span id="userInfoPageInfo">共 0 条 · 第 1 / 1 页</span>
+              <button id="userInfoNextPageBtn" class="ghost-btn">下一页</button>
+            </div>
+          </article>
+        </section>
+
+        <section class="subtab-panel hidden" data-subpanel="stageInsight">
+          <div class="placeholder-grid">
+            <article class="card">
+              <div class="card-head">
+                <h3>阶段学情（占位）</h3>
+                <span class="tag">管理</span>
+              </div>
+              <p class="placeholder-text">后续承接阶段趋势、风险分层、续费沟通视图。</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="subtab-panel hidden" data-subpanel="questionBank">
+          <div class="placeholder-grid">
+            <article class="card">
+              <div class="card-head">
+                <h3>题库（占位）</h3>
+                <span class="tag">资源</span>
+              </div>
+              <p class="placeholder-text">后续承接题目管理、筛选、组卷与调用统计。</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="subtab-panel hidden" data-subpanel="aiTools">
+          <div class="placeholder-grid">
+            <article class="card">
+              <div class="card-head">
+                <h3>智能工具（占位）</h3>
+                <span class="tag">资源</span>
+              </div>
+              <p class="placeholder-text">后续承接话术生成、诊断建议、任务推荐等能力。</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="subtab-panel hidden" data-subpanel="sopMgmt">
+          <div class="placeholder-grid">
+            <article class="card">
+              <div class="card-head">
+                <h3>SOP管理（占位）</h3>
+                <span class="tag">资源</span>
+              </div>
+              <p class="placeholder-text">后续承接SOP模板库、版本管理、质检与使用反馈。</p>
+            </article>
+          </div>
+        </section>
+      </main>
+    </section>
+
+    <div id="diagnosisModal" class="modal hidden">
+      <div class="modal-mask" id="closeDiagnosisModalMask"></div>
+      <div class="modal-content">
+        <div class="modal-head">
+          <h3>新建诊断</h3>
+          <button id="closeDiagnosisModalBtn" class="ghost-btn">关闭</button>
+        </div>
+        <div class="form-grid">
+          <label>学段
+            <select id="diagGrade">
+              <option>初中</option>
+              <option>高中</option>
+            </select>
+          </label>
+          <label>学科
+            <select id="diagSubject">
+              <option>英语</option>
+              <option>数学</option>
+              <option>物理</option>
+            </select>
+          </label>
+          <label>教材章节
+            <input id="diagChapter" type="text" value="人教版 必修一 Unit2" />
+          </label>
+          <label>诊断类型
+            <select id="diagType">
+              <option>基础摸底</option>
+              <option>冲刺诊断</option>
+              <option>偏科定位</option>
+            </select>
+          </label>
+        </div>
+        <div class="action-row">
+          <button id="generateDiagnosisLinkBtn" class="primary-btn">生成诊断链接</button>
+        </div>
+        <div class="generated-box">
+          <p>动态H5链接</p>
+          <div class="link-row">
+            <input id="generatedDiagnosisLink" type="text" readonly placeholder="点击“生成诊断链接”后展示" />
+            <button id="copyDiagnosisLinkBtn" class="ghost-btn">一键复制</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="chapterTooltip" class="floating-tooltip hidden"></div>
+    <div id="urlPopover" class="floating-popover hidden">
+      <div class="popover-head">原始诊断URL</div>
+      <div id="urlPopoverText" class="popover-url"></div>
+      <div id="urlPopoverMeta" class="popover-meta"></div>
+      <div class="popover-actions">
+        <button id="openUrlPopoverBtn" class="ghost-btn">打开链接</button>
+        <button id="copyUrlPopoverBtn" class="primary-btn">复制URL</button>
+        <button id="deleteUrlPopoverBtn" class="danger-btn">删除URL</button>
+      </div>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
