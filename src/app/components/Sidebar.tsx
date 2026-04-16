@@ -12,7 +12,7 @@ import {
   Users,
 } from "lucide-react";
 
-const publicAsset = (fileName: string) => `${import.meta.env.BASE_URL}${fileName}`;
+import teacherAvatarImg from "@/assets/images/teacher-avatar.jpg";
 
 
 interface NavItem {
@@ -274,7 +274,7 @@ export function Sidebar() {
           style={{ backgroundColor: "rgba(255,255,255,0.4)", boxShadow: "0px 4px 8px 0px rgba(0,0,0,0.03)" }}
         >
           <div className="relative size-9 shrink-0 overflow-hidden rounded-full bg-gradient-to-b from-[#ecf0fc] to-[rgba(236,240,252,0.5)]">
-            <img alt="陈子涵老师" className="size-full object-cover object-center" src={publicAsset("teacher-avatar.jpg")} />
+            <img alt="陈子涵老师" className="size-full object-cover object-center" src={teacherAvatarImg} />
           </div>
           <div className="flex flex-col items-start whitespace-nowrap">
             <span

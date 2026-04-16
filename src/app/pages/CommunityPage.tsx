@@ -12,7 +12,10 @@ import {
   AlertDialogTitle,
 } from "../components/ui/alert-dialog";
 
-const publicAsset = (fileName: string) => `${import.meta.env.BASE_URL}${fileName}`;
+import voiceOrbImg from "@/assets/images/voice-orb.webp";
+import surveyIllustrationImg from "@/assets/images/survey-illustration.png";
+import cardBgImg from "@/assets/images/card-bg.png";
+import interviewErrorImg from "@/assets/images/interview-error-illustration.png";
 
 /* ─── Mock 公告数据 ─── */
 type ContentBlock =
@@ -443,7 +446,7 @@ function RecordingIndicator() {
     <div className="flex flex-col items-center" style={{ gap: "4px" }}>
       <div className="relative flex items-center justify-center" style={{ width: "70px", height: "70px" }}>
         <img
-          src={publicAsset("voice-orb.webp")}
+          src={voiceOrbImg}
           alt=""
           style={{
             width: "70px",
@@ -460,7 +463,7 @@ function RecordingIndicator() {
 function SurveyIllustration() {
   return (
     <img
-      src={publicAsset("survey-illustration.png")}
+      src={surveyIllustrationImg}
       alt=""
       className="size-full object-contain"
       style={{ mixBlendMode: "multiply" }}
@@ -711,7 +714,7 @@ function AgentInterviewFullScreen({ open, onClose }: { open: boolean; onClose: (
           height: "min(70vh, calc(100vh - 64px))",
           maxWidth: "calc(100vw - 64px)",
           aspectRatio: "3 / 2",
-          backgroundImage: `url(${publicAsset("card-bg.png")})`,
+          backgroundImage: `url(${cardBgImg})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
           border: "1px solid #FFFFFF",
@@ -954,7 +957,7 @@ function AgentInterviewFullScreen({ open, onClose }: { open: boolean; onClose: (
               <div className="flex h-full flex-col items-center justify-center text-center" style={{ gap: "12px" }}>
                 <div className="flex flex-col items-center" style={{ gap: "8px" }}>
                   <img
-                    src={publicAsset("interview-error-illustration.png")}
+                    src={interviewErrorImg}
                     alt=""
                     style={{ width: "120px", height: "120px", objectFit: "contain" }}
                   />
