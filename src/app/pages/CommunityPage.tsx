@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, X } from "lucide-react";
 import { showToast } from "../components/CustomToast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../components/ui/alert-dialog";
 
 const publicAsset = (fileName: string) => `${import.meta.env.BASE_URL}${fileName}`;
 
@@ -463,6 +473,7 @@ function AgentInterviewFullScreen({ open, onClose }: { open: boolean; onClose: (
   const [stage, setStage] = useState<InterviewStage>("start");
   const [mode, setMode] = useState<InterviewMode>("voice");
   const [aiStatus, setAiStatus] = useState<InterviewAiStatus>("replying");
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [roundIndex, setRoundIndex] = useState(0);
   const [sessionId, setSessionId] = useState<string>("");
   const [creatingSession, setCreatingSession] = useState(false);
@@ -494,6 +505,7 @@ function AgentInterviewFullScreen({ open, onClose }: { open: boolean; onClose: (
     setRecordSeconds(0);
     setErrorType(null);
     setRetrying(false);
+    setShowExitConfirm(false);
     creatingSessionRef.current = false;
     recordSecondsRef.current = 0;
   }, []);
@@ -519,6 +531,14 @@ function AgentInterviewFullScreen({ open, onClose }: { open: boolean; onClose: (
   const closeFlow = () => {
     resetInterview();
     onClose();
+  };
+
+  const handleAttemptClose = () => {
+    if (stage === "interview") {
+      setShowExitConfirm(true);
+      return;
+    }
+    closeFlow();
   };
 
   const goNextRound = () => {
@@ -675,7 +695,7 @@ function AgentInterviewFullScreen({ open, onClose }: { open: boolean; onClose: (
       {/* Back button */}
       <button
         type="button"
-        onClick={closeFlow}
+        onClick={handleAttemptClose}
         className="absolute left-6 top-6 z-10 flex size-[30px] cursor-pointer items-center justify-center rounded-[20px] border border-solid border-[#E9ECF5] bg-white transition-colors hover:bg-[#f8f9fc]"
         aria-label="返回消息"
       >
@@ -949,6 +969,38 @@ function AgentInterviewFullScreen({ open, onClose }: { open: boolean; onClose: (
           </div>
         </div>
       </div>
+
+      <AlertDialog open={showExitConfirm} onOpenChange={setShowExitConfirm}>
+        <AlertDialogContent className="w-[400px] max-w-[calc(100%-2rem)] rounded-[16px] border border-[#E9ECF5] bg-white p-0 shadow-[0px_8px_32px_0px_rgba(16,18,25,0.1)]">
+          <AlertDialogHeader className="gap-2 px-6 pt-6 text-left">
+            <div className="flex items-center gap-2">
+              <div className="flex size-6 items-center justify-center rounded-full bg-[#FA9524] text-white">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+                  <path d="M7 3V7.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                  <circle cx="7" cy="10.2" r="0.9" fill="currentColor" />
+                </svg>
+              </div>
+              <AlertDialogTitle className="text-[20px] font-semibold leading-[1.5] text-[#101019]">
+                访谈尚未结束，确定要退出吗？
+              </AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="pl-8 text-[14px] leading-[1.5] text-[#444963]">
+              退出后本次访谈进度不会保留，需要重新开始。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="px-6 pb-5 pt-6 sm:justify-end">
+            <AlertDialogCancel className="h-[36px] min-w-[76px] rounded-[18px] border-[#DFE3F0] bg-white px-5 text-[14px] font-medium text-[#444963] hover:bg-white hover:text-[#444963]">
+              取消
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="h-[36px] min-w-[76px] rounded-[18px] bg-[#6574FC] px-5 text-[14px] font-medium text-white hover:bg-[#5B69F8]"
+              onClick={closeFlow}
+            >
+              确认
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
