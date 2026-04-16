@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, X } from "lucide-react";
 import { showToast } from "../components/CustomToast";
 
+const publicAsset = (fileName: string) => `${import.meta.env.BASE_URL}${fileName}`;
+
 /* ─── Mock 公告数据 ─── */
 type ContentBlock =
   | { type: "subtitle"; text: string }
@@ -431,7 +433,7 @@ function RecordingIndicator() {
     <div className="flex flex-col items-center" style={{ gap: "4px" }}>
       <div className="relative flex items-center justify-center" style={{ width: "70px", height: "70px" }}>
         <img
-          src="/voice-orb.webp"
+          src={publicAsset("voice-orb.webp")}
           alt=""
           style={{
             width: "70px",
@@ -448,7 +450,7 @@ function RecordingIndicator() {
 function SurveyIllustration() {
   return (
     <img
-      src="/survey-illustration.png"
+      src={publicAsset("survey-illustration.png")}
       alt=""
       className="size-full object-contain"
       style={{ mixBlendMode: "multiply" }}
@@ -689,7 +691,7 @@ function AgentInterviewFullScreen({ open, onClose }: { open: boolean; onClose: (
           height: "min(70vh, calc(100vh - 64px))",
           maxWidth: "calc(100vw - 64px)",
           aspectRatio: "3 / 2",
-          backgroundImage: "url(/card-bg.png)",
+          backgroundImage: `url(${publicAsset("card-bg.png")})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
           border: "1px solid #FFFFFF",
@@ -932,7 +934,7 @@ function AgentInterviewFullScreen({ open, onClose }: { open: boolean; onClose: (
               <div className="flex h-full flex-col items-center justify-center text-center" style={{ gap: "12px" }}>
                 <div className="flex flex-col items-center" style={{ gap: "8px" }}>
                   <img
-                    src="/interview-error-illustration.png"
+                    src={publicAsset("interview-error-illustration.png")}
                     alt=""
                     style={{ width: "120px", height: "120px", objectFit: "contain" }}
                   />
