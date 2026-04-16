@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider, Outlet, useLocation, Navigate } from "react-router";
+import { createHashRouter, RouterProvider, Outlet, useLocation, Navigate } from "react-router";
 import { Suspense } from "react";
 import { Sidebar } from "./components/Sidebar";
 import BackgroundFrame from "../imports/Frame69";
@@ -126,7 +126,7 @@ const FullPageLoading = (
   </div>
 );
 
-const router = createBrowserRouter([
+const router = createHashRouter([
   {
     path: "/",
     element: <Navigate to="/dashboard" replace />,
