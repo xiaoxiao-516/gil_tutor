@@ -26,7 +26,7 @@ function figmaAssetPlaceholder(): Plugin {
 }
 
 export default defineConfig({
-  base: '/gil_tutor/',
+  base: process.env.GITHUB_ACTIONS ? '/gil_tutor/' : '/',
   plugins: [
     // The React and Tailwind plugins are both required for Make, even if
     // Tailwind is not being actively used – do not remove them
