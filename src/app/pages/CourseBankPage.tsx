@@ -1,12 +1,12 @@
 import svgPaths from "../../imports/svg-i8bsv8j0y1";
 import svgEmptyState from "../../imports/svg-3r90azh3mw";
+import svgPathsUpload from "../../imports/svg-pzealc5p9r";
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { CustomSelect } from "../components/CustomSelect";
 import { showToast } from "../components/CustomToast";
+import { PublishConfirmDialog } from "../components/PublishConfirmDialog";
 import { HeaderDropdown } from "../components/HeaderDropdown";
-import IcNavBack from "../../imports/IcNavBack";
-
 /* ─── Data structures ─── */
 
 interface TreeNode {
@@ -518,8 +518,26 @@ function findLabel(nodes: TreeNode[], id: string): string {
   return "";
 }
 
-/* ─── Main Component ─── */
-export function CourseBankPage() {
+function parseCourseDurationMinutes(text: string): number {
+  const m = text.match(/\d+/);
+  return m ? parseInt(m[0], 10) : 30;
+}
+
+/* ─── 课程库：整页与布置弹窗共用 ─── */
+export interface CoursePickForAssign {
+  id: string;
+  name: string;
+  taskType: "AI课" | "巩固练习";
+  duration: number;
+}
+
+export interface CourseBankWorkspaceProps {
+  variant: "page" | "modal";
+  onClose?: () => void;
+  onConfirm?: (items: CoursePickForAssign[]) => void;
+}
+
+export function CourseBankWorkspace({ variant, onClose, onConfirm }: CourseBankWorkspaceProps) {
   const [subject, setSubject] = useState("math");
   const [textbook, setTextbook] = useState("gao1-rj-bx1");
   const [schoolLevel, setSchoolLevel] = useState<"middle" | "high">("high");
@@ -611,6 +629,7 @@ export function CourseBankPage() {
   };
 
   // Count added modules
+  const [showPublishDialog, setShowPublishDialog] = useState(false);
   const addedCount = (() => {
     let count = 0;
     displayLeaves.forEach((leafId) => {
@@ -624,22 +643,55 @@ export function CourseBankPage() {
     return count;
   })();
 
+  const collectAddedModules = (): CoursePickForAssign[] => {
+    const out: CoursePickForAssign[] = [];
+    let uid = 0;
+    displayLeaves.forEach((leafId) => {
+      const cards = getCardsForNode(leafId);
+      const leafLabel = findLabel(tree, leafId);
+      cards.forEach((card) => {
+        card.modules.forEach((mod, modIdx) => {
+          if (getModuleAdded(card.id, modIdx, mod.added)) {
+            uid += 1;
+            const sectionTitle = leafLabel || card.title;
+            out.push({
+              id: `course-pick-${card.id}-${modIdx}-${uid}`,
+              name: `${sectionTitle} · ${mod.title}`,
+              taskType: mod.type === "course" ? "AI课" : "巩固练习",
+              duration: parseCourseDurationMinutes(mod.duration),
+            });
+          }
+        });
+      });
+    });
+    return out;
+  };
+
+  const handleModalConfirm = () => {
+    if (variant !== "modal") return;
+    const picks = collectAddedModules();
+    if (picks.length === 0) {
+      showToast("请先加入课程", "warning");
+      return;
+    }
+    onConfirm?.(picks);
+    setModuleStates({});
+    onClose?.();
+  };
+
+  const primaryFooterLabel = variant === "modal" ? "确认" : "去布置";
+
   return (
-    <div className="flex flex-col flex-1 min-h-0">
+    <div className="flex min-h-0 flex-1 flex-col bg-[#ffffff]">
       {/* Page title */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="shrink-0 size-[30px] cursor-pointer"
-          >
-            <IcNavBack />
-          </button>
           <h2
             style={{
-              fontSize: "var(--text-h3)",
-              fontWeight: "var(--font-weight-bold)",
-              color: "var(--card-foreground)",
+              fontSize: "var(--text-lg)",
+              fontWeight: "var(--font-weight-medium)",
+              lineHeight: "30px",
+              color: "var(--page-title-muted)",
             }}
           >
             课程
@@ -661,15 +713,27 @@ export function CourseBankPage() {
             options={subjectSelectOptions}
             onChange={handleSubjectChange}
           />
+          {variant === "modal" && onClose ? (
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-[32px] w-[32px] shrink-0 cursor-pointer items-center justify-center rounded-[8px] border-none bg-transparent transition-colors hover:bg-[#f4f7fe]"
+              aria-label="关闭"
+            >
+              <svg className="block" width="14" height="14" viewBox="0 0 14.0237 14.0237" fill="none">
+                <path clipRule="evenodd" d={svgPathsUpload.p37c48700} fill="#646B8A" fillRule="evenodd" />
+              </svg>
+            </button>
+          ) : null}
         </div>
       </div>
 
       {/* Main content: tree + cards */}
-      <div className="flex gap-0 flex-1 min-h-0 rounded-[16px]" style={{ border: "1px solid #E9ECF5" }}>
+      <div className="flex gap-0 flex-1 min-h-0 rounded-[16px] bg-[#ffffff]">
         {/* Left panel: Knowledge tree */}
         <div className="w-[266px] shrink-0 flex flex-col min-h-0">
           <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex flex-col px-5 py-6 flex-1 min-h-0">
+            <div className="flex flex-col px-5 py-6 flex-1 min-h-0 bg-[#ffffff]">
               {/* Textbook selector */}
               <div className="mb-3">
                 <CustomSelect
@@ -701,7 +765,7 @@ export function CourseBankPage() {
         <div className="w-px bg-[#e9ecf5] shrink-0" />
 
         {/* Right panel: Course cards */}
-        <div className="flex-1 min-w-0 overflow-y-auto scrollbar-thin">
+        <div className="flex-1 min-w-0 overflow-y-auto scrollbar-thin bg-[#ffffff]">
           <div className="w-full">
             <div>
               {(() => {
@@ -887,14 +951,83 @@ export function CourseBankPage() {
           <span style={{ color: "var(--primary)" }}>{addedCount}</span>
           <span style={{ color: "#444963" }}> 个课程</span>
         </p>
-        <button
-          className={`relative z-[1] flex items-center justify-center h-[36px] w-[100px] py-[8px] rounded-[18px] shrink-0 ${addedCount > 0 ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
-          style={{ backgroundColor: addedCount > 0 ? "var(--primary)" : "#C0C4D0" }}
-          disabled={addedCount === 0}
-        >
-          <span style={{ fontSize: "var(--text-base)", fontWeight: "var(--font-weight-medium)", color: "white", lineHeight: "1.5" }}>去布置</span>
-        </button>
+        <div className="relative z-[1] flex shrink-0 items-center gap-[12px]">
+          <button
+            type="button"
+            onClick={() => {
+              if (addedCount === 0) return;
+              setModuleStates({});
+              showToast("已清空已选课程", "success");
+            }}
+            disabled={addedCount === 0}
+            className="flex h-[36px] w-[100px] cursor-pointer items-center justify-center rounded-[18px] border border-solid bg-white transition-colors hover:opacity-90 disabled:cursor-not-allowed"
+            style={{
+              borderColor: addedCount > 0 ? "var(--primary)" : "#bbcbfc",
+            }}
+          >
+            <span
+              style={{
+                fontSize: "var(--text-base)",
+                fontWeight: "var(--font-weight-medium)",
+                color: addedCount > 0 ? "var(--primary)" : "#bbcbfc",
+                lineHeight: "1.5",
+                whiteSpace: "nowrap",
+              }}
+            >
+              清空
+            </span>
+          </button>
+          <button
+            type="button"
+            className={`flex h-[36px] w-[100px] shrink-0 items-center justify-center rounded-[18px] border-none transition-colors hover:opacity-90 ${
+              addedCount > 0 ? "cursor-pointer" : "cursor-not-allowed"
+            }`}
+            style={{
+              backgroundColor: addedCount > 0 ? "var(--primary)" : "#bbcbfc",
+            }}
+            disabled={addedCount === 0}
+            onClick={() => {
+              if (addedCount === 0) return;
+              if (variant === "modal") {
+                handleModalConfirm();
+              } else {
+                setShowPublishDialog(true);
+              }
+            }}
+          >
+            <span
+              style={{
+                fontSize: "var(--text-base)",
+                fontWeight: "var(--font-weight-medium)",
+                color: "white",
+                lineHeight: "1.5",
+              }}
+            >
+              {primaryFooterLabel}
+            </span>
+          </button>
+        </div>
       </div>
+
+      {variant === "page" && (
+        <PublishConfirmDialog
+          open={showPublishDialog}
+          joinedCount={addedCount}
+          onCancel={() => setShowPublishDialog(false)}
+          onConfirm={({ taskName }) => {
+            setShowPublishDialog(false);
+            showToast(`已成功布置「${taskName}」，共 ${addedCount} 门课程`, "success");
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+export function CourseBankPage() {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col bg-[#ffffff]">
+      <CourseBankWorkspace variant="page" />
     </div>
   );
 }

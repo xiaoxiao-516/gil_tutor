@@ -1,10 +1,18 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 interface CustomSelectProps {
   value: string;
   onChange: (value: string) => void;
   options: { label: string; value: string }[];
   placeholder?: string;
+  /** 为 true 时将下拉挂到 document.body，避免被 overflow 或兄弟节点遮挡（如弹窗内） */
+  menuInPortal?: boolean;
+  /** md=40px 高（默认），sm=32px 高（布置页顶栏、弹窗等） */
+  size?: "md" | "sm";
+  /** default=白底描边；canvas=#F4F7FE 无描边（布置页学生/学科）；plain=白底无描边（渐变条内时长） */
+  tone?: "default" | "canvas" | "plain";
+  leadingIcon?: ReactNode;
 }
 
 export function CustomSelect({
@@ -12,18 +20,39 @@ export function CustomSelect({
   onChange,
   options,
   placeholder = "全部",
+  menuInPortal = false,
+  size = "md",
+  tone = "default",
+  leadingIcon,
 }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [menuRect, setMenuRect] = useState({ top: 0, left: 0, width: 0 });
+
+  useLayoutEffect(() => {
+    if (!isOpen || !menuInPortal) return;
+    const update = () => {
+      if (!buttonRef.current) return;
+      const r = buttonRef.current.getBoundingClientRect();
+      setMenuRect({ top: r.bottom + 4, left: r.left, width: r.width });
+    };
+    update();
+    window.addEventListener("scroll", update, true);
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update, true);
+      window.removeEventListener("resize", update);
+    };
+  }, [isOpen, menuInPortal]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
-        setIsOpen(false);
-      }
+      const t = e.target as Node;
+      if (containerRef.current?.contains(t)) return;
+      if (menuRef.current?.contains(t)) return;
+      setIsOpen(false);
     };
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
@@ -34,24 +63,81 @@ export function CustomSelect({
   const selectedLabel =
     options.find((o) => o.value === value)?.label || placeholder;
 
+  const heightClass = size === "sm" ? "h-8 min-h-[32px]" : "h-10 min-h-[40px]";
+  const toneClasses =
+    tone === "canvas"
+      ? "bg-[#f4f7fe] border border-transparent"
+      : tone === "plain"
+        ? "bg-white border border-transparent"
+        : "bg-input-background border";
+  const openBorderStyle =
+    tone === "default"
+      ? { borderColor: isOpen ? "var(--primary)" : "var(--input-border-soft)" }
+      : { borderColor: isOpen ? "var(--primary)" : "transparent" };
+
+  const menuClassName =
+    "bg-popover flex flex-col gap-[2px] p-[4px] rounded-[12px] max-h-[240px] overflow-y-auto";
+
+  const menuStyle = {
+    boxShadow: "0px 16px 56px 0px rgba(16,18,25,0.08)",
+  } as const;
+
+  const renderOptions = () =>
+    options.map((option) => {
+      const isActive = option.value === value;
+      return (
+        <button
+          key={option.value}
+          type="button"
+          onClick={() => {
+            onChange(option.value);
+            setIsOpen(false);
+          }}
+          className={`w-full text-left transition-colors flex items-center ${
+            isActive
+              ? "bg-sidebar rounded-[10px]"
+              : "bg-popover rounded-[10px] hover:bg-[rgba(235,241,255,0.5)]"
+          }`}
+          style={{
+            padding: "12px 16px",
+            color: isActive
+              ? "var(--sidebar-primary)"
+              : "var(--popover-foreground)",
+            fontSize: "var(--text-base)",
+            fontWeight: isActive
+              ? "var(--font-weight-medium)"
+              : "var(--font-weight-regular)",
+          }}
+        >
+          {option.label}
+        </button>
+      );
+    });
+
   return (
     <div ref={containerRef} className="relative w-full h-full">
-      {/* Trigger */}
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full h-[32px] px-3 bg-input-background border rounded-[6px] focus:outline-none text-left flex items-center justify-between ${isOpen ? 'border-primary' : 'border-border'}`}
+        className={`w-full ${heightClass} px-3 rounded-[8px] border border-solid focus:outline-none text-left flex items-center justify-between gap-2 ${toneClasses}`}
         style={{
-          fontSize: "var(--text-base)",
+          fontSize: size === "sm" ? "14px" : "var(--text-base)",
           fontWeight: "var(--font-weight-regular)",
           color: value
             ? "var(--card-foreground)"
             : "var(--muted-foreground)",
+          ...openBorderStyle,
         }}
       >
-        <span className="truncate">{selectedLabel}</span>
+        <span className="flex min-w-0 flex-1 items-center gap-1">
+          {leadingIcon ? (
+            <span className="inline-flex shrink-0 items-center justify-center">{leadingIcon}</span>
+          ) : null}
+          <span className="truncate">{selectedLabel}</span>
+        </span>
         <svg
-          className="shrink-0 ml-2 transition-transform duration-200"
+          className="shrink-0 transition-transform duration-200"
           style={{
             width: 12,
             height: 12,
@@ -69,46 +155,32 @@ export function CustomSelect({
         </svg>
       </button>
 
-      {/* Dropdown */}
-      {isOpen && (
+      {isOpen && !menuInPortal && (
         <div
-          className="absolute z-50 mt-1 w-full bg-popover flex flex-col gap-[2px] p-[4px] rounded-[12px] max-h-[240px] overflow-y-auto"
-          style={{
-            boxShadow: "0px 16px 56px 0px rgba(16,18,25,0.08)",
-          }}
+          className={`absolute z-50 mt-1 w-full ${menuClassName}`}
+          style={menuStyle}
         >
-          {options.map((option) => {
-            const isActive = option.value === value;
-            return (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => {
-                  onChange(option.value);
-                  setIsOpen(false);
-                }}
-                className={`w-full text-left transition-colors flex items-center ${
-                  isActive
-                    ? "bg-sidebar rounded-[10px]"
-                    : "bg-popover rounded-[10px] hover:bg-[rgba(235,241,255,0.5)]"
-                }`}
-                style={{
-                  padding: "12px 16px",
-                  color: isActive
-                    ? "var(--sidebar-primary)"
-                    : "var(--popover-foreground)",
-                  fontSize: "var(--text-base)",
-                  fontWeight: isActive
-                    ? "var(--font-weight-medium)"
-                    : "var(--font-weight-regular)",
-                }}
-              >
-                {option.label}
-              </button>
-            );
-          })}
+          {renderOptions()}
         </div>
       )}
+
+      {isOpen &&
+        menuInPortal &&
+        createPortal(
+          <div
+            ref={menuRef}
+            className={`fixed z-[10050] ${menuClassName}`}
+            style={{
+              ...menuStyle,
+              top: menuRect.top,
+              left: menuRect.left,
+              width: menuRect.width,
+            }}
+          >
+            {renderOptions()}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

@@ -2,8 +2,8 @@
 
 :root {
   --font-size: 16px;
-  /* The default background color for the application. */
-  --background: rgba(245, 250, 255, 1);
+  /* 学管 Figma「布置」767:649 画布底色 */
+  --background: #F4F7FE;
   /* The default color for elements or text that appears on top of the background. */
   --foreground: rgba(16, 16, 25, 1);
   /* The background color for cards, modals, and other containers. */
@@ -87,9 +87,21 @@
   
   /* Typography font weights */
   --font-weight-bold: 700;
+  /**
+   * 页面主标题等：设计稿 **W65**（阿里巴巴普惠体 3.0「65 Medium」字重档）。
+   * 与 `fonts.css` 中 AlibabaPuHuiTi-3-65-Medium 的 `font-weight: 500` 对齐（勿用 650，否则无法命中该 @font-face）。
+   */
+  --font-weight-page-title: 500;
   --font-weight-semibold: 600;
   --font-weight-medium: 500;
   --font-weight-regular: 400;
+
+  /* 诊断管理 / 学管 Figma：主画布、内容卡片、主按钮渐变 */
+  --dashboard-canvas: #f4f7fe;
+  --page-title-muted: #444963;
+  --table-header-text: #777d98;
+  --input-border-soft: rgba(223, 227, 240, 0.5);
+  --primary-gradient: linear-gradient(90deg, #3355ff 1.45%, #4da6ff 98.55%);
 }
 
 .dark {
@@ -216,7 +228,7 @@
     h3 {
       font-family: 'Alibaba PuHuiTi 3.0', sans-serif;
       font-size: var(--text-h3);
-      font-weight: var(--font-weight-semibold);
+      font-weight: var(--font-weight-page-title);
       line-height: 1.5;
     }
 
@@ -259,4 +271,12 @@
 
 html {
   font-size: var(--font-size);
+}
+
+@layer components {
+  /** 主内容区白底容器：无描边、无投影，与全站右侧内容区统一 */
+  .dashboard-page-panel {
+    background-color: var(--card);
+    border-radius: 12px;
+  }
 }

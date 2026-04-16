@@ -139,6 +139,8 @@ function ToastContent({
 /* ─── Public API ─── */
 
 const DURATION = 2000;
+const TOAST_SINGLETON_ID = "global-custom-toast";
+let toastDismissTimer: ReturnType<typeof window.setTimeout> | null = null;
 
 type ToastType = "success" | "error" | "info" | "warning" | "default";
 
@@ -152,8 +154,24 @@ const iconMap: Record<ToastType, React.ReactNode | null> = {
 
 export function showToast(message: string, type: ToastType = "default") {
   const icon = iconMap[type] ?? null;
-  return toast.custom(
+  toast.dismiss(TOAST_SINGLETON_ID);
+  if (toastDismissTimer) {
+    window.clearTimeout(toastDismissTimer);
+    toastDismissTimer = null;
+  }
+
+  const toastId = toast.custom(
     () => <ToastContent message={message} icon={icon} />,
-    { duration: DURATION }
+    {
+      id: TOAST_SINGLETON_ID,
+      duration: DURATION,
+    }
   );
+
+  toastDismissTimer = window.setTimeout(() => {
+    toast.dismiss(TOAST_SINGLETON_ID);
+    toastDismissTimer = null;
+  }, DURATION);
+
+  return toastId;
 }

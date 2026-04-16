@@ -1,14 +1,21 @@
-import imgAvatar from "figma:asset/ff375aa93bf8927b36c352c6491a06bc6ed7e493.png";
-import image_8e70990d from "figma:asset/8e70990d6104e43028f05c9340c57c6d1586c867.png";
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router";
-import svgPaths from "../../imports/svg-7ibfcnakl0";
-import svgIcLesson from "../../imports/svg-31opha56kx";
+import type { LucideIcon } from "lucide-react";
+import {
+  ClipboardList,
+  FileSearch,
+  FolderOpen,
+  GraduationCap,
+  PlayCircle,
+  UserCircle,
+  UserRound,
+  Users,
+} from "lucide-react";
+
 
 interface NavItem {
   label: string;
   path: string;
-  icon: React.ReactNode;
 }
 
 interface ModuleGroup {
@@ -16,108 +23,40 @@ interface ModuleGroup {
   items: NavItem[];
 }
 
-// Icons from Figma SVG paths
-function DiagnosisIcon({ active }: { active: boolean }) {
-  const color = active ? "#4A4FED" : "#777D98";
+/** 与 Figma 学管侧栏（node 624:7071）一致：16×16 线型图标槽 */
+const NAV_ICON_MAP: Record<string, LucideIcon> = {
+  诊断管理: FileSearch,
+  试听课管理: PlayCircle,
+  体验账号管理: UserRound,
+  布置: ClipboardList,
+  学员管理: Users,
+  用户信息: UserCircle,
+  老师管理: GraduationCap,
+  公共资源: FolderOpen,
+};
+
+function AnnouncementIcon({ color }: { color: string }) {
   return (
-    <div className="relative shrink-0 size-[16px]">
-      <svg className="block size-full" fill="none" viewBox="0 0 16 16">
-        <path d={svgPaths.p125fe300} stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" />
-        <path d={svgPaths.p3b050570} stroke={color} strokeWidth="1.2" />
-        <path d="M12 12.6667L13.6667 14" stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" />
-        <path d={svgPaths.p3b0e00} fill={color} opacity="0.4" />
-      </svg>
-    </div>
+    <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0" aria-hidden>
+      <rect x="1.75" y="3.75" width="15.5" height="12.5" rx="2.25" stroke={color} strokeWidth="1.5" />
+      <path d="M5 7L8.27212 9.54498C8.99434 10.1067 10.0057 10.1067 10.7279 9.54498L14 7" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
   );
 }
 
-function IcLessonIcon({ active }: { active: boolean }) {
-  const color = active ? "var(--sidebar-primary)" : "#777D98";
+function NavItemIcon({ label, active }: { label: string; active: boolean }) {
+  const color = active ? "var(--sidebar-primary)" : "var(--sidebar-foreground)";
+  if (label === "消息") return <AnnouncementIcon color={color} />;
+  const Icon = NAV_ICON_MAP[label];
+  if (!Icon) return <span className="inline-block size-4 shrink-0" />;
   return (
-    <div className="relative shrink-0 size-[16px]">
-      <svg className="block size-full" fill="none" viewBox="0 0 16 16">
-        <path d={svgIcLesson.p15bf1f72} fill={color} opacity="0.5" stroke={color} />
-        <path d={svgIcLesson.p202a0f00} fill={color} />
-      </svg>
-    </div>
-  );
-}
-
-function TrialAccountIcon({ active }: { active: boolean }) {
-  const color = active ? "#4A4FED" : "#777D98";
-  return (
-    <div className="relative shrink-0 size-[16px]">
-      <svg className="block size-full" fill="none" viewBox="0 0 16 16">
-        <path d={svgPaths.p1490be40} stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" />
-        <path d={svgPaths.p1543d380} opacity="0.5" stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" />
-      </svg>
-    </div>
-  );
-}
-
-function AssignIcon({ active }: { active: boolean }) {
-  const color = active ? "#4A4FED" : "#777D98";
-  return (
-    <div className="relative shrink-0 size-[16px]">
-      <svg className="block size-full" fill="none" viewBox="0 0 16 16">
-        <path d={svgPaths.p386b8b00} stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" />
-        <path d={svgPaths.p22f79f00} fill={color} opacity="0.5" />
-        <path d={svgPaths.p9a1b880} stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" />
-      </svg>
-    </div>
-  );
-}
-
-function StudentIcon({ active }: { active: boolean }) {
-  const color = active ? "#4A4FED" : "#777D98";
-  return (
-    <div className="relative shrink-0 size-[16px]">
-      <svg className="block size-full" fill="none" viewBox="0 0 16 16">
-        <path d={svgPaths.p1967df00} stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" />
-        <path d={svgPaths.p1914900} stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" />
-        <path d={svgPaths.p138bd980} stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" />
-        <path d={svgPaths.p11806f00} fill={color} opacity="0.5" />
-        <path d={svgPaths.p1e903800} stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" />
-      </svg>
-    </div>
-  );
-}
-
-function UserInfoIcon({ active }: { active: boolean }) {
-  const color = active ? "#4A4FED" : "#777D98";
-  return (
-    <div className="relative shrink-0 size-[16px]">
-      <svg className="block size-full" fill="none" viewBox="0 0 16 16">
-        <path d={svgPaths.p212e3f80} stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" />
-        <path d={svgPaths.p1b134200} fill={color} opacity="0.5" stroke={color} />
-        <path d="M5 4.66667H10.3333" stroke={color} strokeLinecap="round" strokeWidth="1.2" />
-      </svg>
-    </div>
-  );
-}
-
-function TeacherIcon({ active }: { active: boolean }) {
-  const color = active ? "#4A4FED" : "#777D98";
-  return (
-    <div className="relative shrink-0 size-[16px]">
-      <svg className="block size-full" fill="none" viewBox="0 0 16 16">
-        <path d={svgPaths.p28f79080} stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" />
-        <path d={svgPaths.p2cc7f500} stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" />
-        <path d={svgPaths.p84e4b00} fill={color} opacity="0.5" />
-      </svg>
-    </div>
-  );
-}
-
-function ResourceIcon({ active }: { active: boolean }) {
-  const color = active ? "#4A4FED" : "#777D98";
-  return (
-    <div className="relative shrink-0 size-[16px]">
-      <svg className="block size-full" fill="none" viewBox="0 0 16 16">
-        <path d={svgPaths.p236c340} stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" />
-        <path d="M7 5H13V8H6L7 5Z" fill={color} opacity="0.5" />
-      </svg>
-    </div>
+    <Icon
+      className="shrink-0"
+      size={16}
+      strokeWidth={active ? 2.25 : 2}
+      color={color}
+      aria-hidden
+    />
   );
 }
 
@@ -125,29 +64,30 @@ const modules: ModuleGroup[] = [
   {
     title: "体验管理",
     items: [
-      { label: "诊断管理", path: "/dashboard/diagnosis", icon: <DiagnosisIcon active={false} /> },
-      { label: "试听课管理", path: "/dashboard/onboarding", icon: <IcLessonIcon active={false} /> },
-      { label: "体验账号管理", path: "/dashboard/trial-accounts", icon: <TrialAccountIcon active={false} /> },
+      { label: "诊断管理", path: "/dashboard/diagnosis" },
+      { label: "试听课管理", path: "/dashboard/onboarding" },
+      { label: "体验账号管理", path: "/dashboard/trial-accounts" },
     ],
   },
   {
     title: "督学管理",
     items: [
-      { label: "布置", path: "/dashboard/task-management", icon: <AssignIcon active={false} /> },
-      { label: "学员管理", path: "/dashboard/today-board", icon: <StudentIcon active={false} /> },
+      { label: "布置", path: "/dashboard/task-management" },
+      { label: "学员管理", path: "/dashboard/today-board" },
     ],
   },
   {
     title: "人员管理",
     items: [
-      { label: "用户信息", path: "/dashboard/user-info", icon: <UserInfoIcon active={false} /> },
-      { label: "老师管理", path: "/dashboard/supervisor-management", icon: <TeacherIcon active={false} /> },
+      { label: "用户信息", path: "/dashboard/user-info" },
+      { label: "老师管理", path: "/dashboard/supervisor-management" },
     ],
   },
   {
     title: "资源",
     items: [
-      { label: "资源中心", path: "/dashboard/question-bank", icon: <ResourceIcon active={false} /> },
+      { label: "公共资源", path: "/dashboard/question-bank" },
+      { label: "消息", path: "/dashboard/community" },
     ],
   },
 ];
@@ -183,7 +123,10 @@ export function Sidebar() {
 
   const handleMenuItemClick = (item: string) => {
     if (item === "退出登录") handleLogout();
-    else { setActiveMenuItem(item); setMenuOpen(false); }
+    else {
+      setActiveMenuItem(item);
+      setMenuOpen(false);
+    }
   };
 
   const menuItems = [
@@ -198,41 +141,38 @@ export function Sidebar() {
 
   return (
     <aside
-      className="bg-[rgba(255,255,255,0.8)] border border-white rounded-[20px] overflow-hidden relative shrink-0 flex flex-col h-full"
-      style={{
-        width: "200px",
-        boxShadow: "0px 18px 40px 0px rgba(112,144,176,0.1)",
-      }}
+      className="relative flex h-full shrink-0 flex-col overflow-hidden bg-[#F5F7FA]"
+      style={{ width: "200px" }}
     >
       {/* Logo header */}
-      <div className="flex items-center justify-center gap-[12px] px-[12px] py-[16px] h-[68px] shrink-0">
-        <div className="relative shrink-0 size-[28px]">
-          <div className="absolute bg-[#767bf1] left-0 opacity-70 rounded-[28px] size-[28px] top-0" />
+      <div className="mt-[12px] flex h-[48px] shrink-0 items-center gap-[8px] px-6">
+        <div className="relative size-[28px] shrink-0">
+          <div className="absolute inset-0 size-[28px] rounded-[28px] bg-[#3e88ff]" />
           <p
             className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-white"
-            style={{ fontSize: "10px", fontWeight: "var(--font-weight-regular)" }}
+            style={{ fontSize: "10px", fontWeight: 400 }}
           >
             LOGO
           </p>
         </div>
         <p
-          className="whitespace-nowrap tracking-[1.08px]"
+          className="-skew-x-[4deg] whitespace-nowrap tracking-[1.08px]"
           style={{
-            fontSize: "20px",
-            fontWeight: "var(--font-weight-regular)",
-            color: "#646b8a",
+            fontSize: "18px",
+            fontWeight: 700,
+            color: "#101019",
+            lineHeight: "27px",
           }}
         >
-          学管平台
+          小鹿爱学
         </p>
       </div>
 
-      {/* Divider */}
-      <div className="relative w-[188px] mx-auto h-0 shrink-0">
-        <svg className="block w-full h-[1px]" fill="none" viewBox="0 0 188 1">
-          <path d="M0 0.5H188" stroke="url(#sidebarDivider)" />
+      <div className="relative mx-6 h-0 shrink-0">
+        <svg className="block h-[1px] w-full" fill="none" preserveAspectRatio="none" viewBox="0 0 160 1">
+          <path d="M0 0.5H160" stroke="url(#sidebarDivider)" />
           <defs>
-            <linearGradient id="sidebarDivider" x1="0" x2="188" y1="1" y2="1" gradientUnits="userSpaceOnUse">
+            <linearGradient id="sidebarDivider" x1="0" x2="160" y1="1" y2="1" gradientUnits="userSpaceOnUse">
               <stop stopColor="#E9ECF5" stopOpacity="0" />
               <stop offset="0.5" stopColor="#E9ECF5" />
               <stop offset="1" stopColor="#E9ECF5" stopOpacity="0" />
@@ -241,85 +181,63 @@ export function Sidebar() {
         </svg>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-[20px] pt-[16px]">
-        <div className="flex flex-col gap-[24px]">
+      {/* Figma：模块间距 24px；组内标题与列表 gap 2px；菜单项之间 gap 4px */}
+      <nav className="scrollbar-thin min-h-0 flex-1 overflow-y-auto px-6 pt-[12px]">
+        <div className="mx-auto flex w-full min-w-0 flex-col gap-6">
           {modules.map((group) => (
             <div key={group.title} className="flex flex-col gap-[2px]">
-              {/* Section title */}
-              <div className="px-[12px] py-[4px]">
+              <div className="px-3 py-1">
                 <p
                   className="whitespace-nowrap"
                   style={{
                     fontSize: "10px",
-                    fontWeight: "var(--font-weight-regular)",
-                    color: "#777d98",
+                    fontWeight: 300,
+                    color: "var(--sidebar-foreground)",
                     lineHeight: "1.5",
                   }}
                 >
                   {group.title}
                 </p>
               </div>
-              {/* Items */}
-              {group.items.map((item) => {
-                const active = isActive(item.path);
-                return (
-                  <button
-                    key={item.path}
-                    onClick={() => navigate(item.path)}
-                    className={`w-full h-[40px] flex items-center gap-[8px] px-[12px] py-[8px] rounded-[8px] transition-colors cursor-pointer ${
-                      active
-                        ? "bg-gradient-to-r from-[#f0f4ff] to-[#e6edff]"
-                        : "hover:bg-[rgba(240,244,255,0.5)]"
-                    }`}
-                  >
-                    {/* Render active icon for diagnosis when active */}
-                    {item.label === "诊断管理" ? (
-                      <DiagnosisIcon active={active} />
-                    ) : item.label === "试听课管理" ? (
-                      <IcLessonIcon active={active} />
-                    ) : item.label === "布置" ? (
-                      <AssignIcon active={active} />
-                    ) : item.label === "体验账号管理" ? (
-                      <TrialAccountIcon active={active} />
-                    ) : item.label === "学员管理" ? (
-                      <StudentIcon active={active} />
-                    ) : item.label === "用户信息" ? (
-                      <UserInfoIcon active={active} />
-                    ) : item.label === "老师管理" ? (
-                      <TeacherIcon active={active} />
-                    ) : item.label === "资源中心" ? (
-                      <ResourceIcon active={active} />
-                    ) : (
-                      item.icon
-                    )}
-                    <span
-                      className="whitespace-nowrap"
-                      style={{
-                        fontSize: "14px",
-                        fontWeight: active
-                          ? "var(--font-weight-semibold)"
-                          : "var(--font-weight-regular)",
-                        color: active ? "#4a4fed" : "#777d98",
-                        lineHeight: "1.75",
-                      }}
+              <div className="flex flex-col gap-1">
+                {group.items.map((item) => {
+                  const active = isActive(item.path);
+                  return (
+                    <button
+                      key={item.path}
+                      type="button"
+                      onClick={() => navigate(item.path)}
+                      className={`flex h-9 w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 transition-colors ${
+                        active
+                          ? "bg-gradient-to-r from-[#dce8fd] to-[rgba(220,232,253,0.7)]"
+                          : "hover:bg-[rgba(240,244,255,0.5)]"
+                      }`}
                     >
-                      {item.label}
-                    </span>
-                  </button>
-                );
-              })}
+                      <NavItemIcon label={item.label} active={active} />
+                      <span
+                        className="whitespace-nowrap"
+                        style={{
+                          fontSize: "14px",
+                          fontWeight: active ? 600 : 400,
+                          color: active ? "var(--sidebar-primary)" : "var(--sidebar-foreground)",
+                          lineHeight: active ? "1.5" : "1.75",
+                        }}
+                      >
+                        {item.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           ))}
         </div>
       </nav>
 
-      {/* Bottom user section */}
-      <div className="shrink-0 px-[12px] pb-[16px] pt-[8px] relative" ref={menuRef}>
-        {/* Dropdown menu */}
+      <div className="relative shrink-0 px-6 pb-6 pt-2" ref={menuRef}>
         {menuOpen && (
           <div
-            className="absolute bottom-full left-[12px] mb-[8px] w-[176px] bg-popover flex flex-col gap-[2px] p-[4px] rounded-[12px] z-50"
+            className="absolute bottom-full left-6 right-6 z-50 mb-2 flex w-auto flex-col gap-0.5 rounded-xl bg-popover p-1"
             style={{ boxShadow: "0px 16px 56px 0px rgba(16,18,25,0.08)" }}
           >
             {menuItems.map((item) => {
@@ -327,8 +245,9 @@ export function Sidebar() {
               return (
                 <button
                   key={item.label}
+                  type="button"
                   onClick={() => handleMenuItemClick(item.label)}
-                  className={`w-full text-left transition-colors rounded-[10px] cursor-pointer ${
+                  className={`w-full cursor-pointer rounded-[10px] text-left transition-colors ${
                     isMenuActive ? "bg-sidebar" : "bg-popover hover:bg-[rgba(235,241,255,0.5)]"
                   }`}
                   style={{
@@ -346,26 +265,20 @@ export function Sidebar() {
           </div>
         )}
 
-        {/* User avatar */}
         <button
+          type="button"
           onClick={() => setMenuOpen(!menuOpen)}
-          className="w-[176px] flex items-center gap-[8px] p-[8px] cursor-pointer hover:opacity-90 transition-opacity"
+          className="flex w-full min-w-0 cursor-pointer items-center gap-2 rounded-lg px-3 py-2 transition-opacity hover:opacity-90"
+          style={{ backgroundColor: "rgba(255,255,255,0.4)", boxShadow: "0px 4px 8px 0px rgba(0,0,0,0.03)" }}
         >
-          <div className="relative rounded-[32px] shrink-0 size-[32px]">
-            <div className="absolute bg-gradient-to-b from-[#ecf0fc] to-[rgba(236,240,252,0.5)] inset-0 rounded-[32px]" />
-            <div className="absolute inset-0 overflow-hidden rounded-[32px]">
-              <img
-                alt="avatar"
-                className="absolute h-[132.74%] left-0 max-w-none top-[1.49%] w-full"
-                src={imgAvatar}
-              />
-            </div>
+          <div className="relative size-9 shrink-0 overflow-hidden rounded-full bg-gradient-to-b from-[#ecf0fc] to-[rgba(236,240,252,0.5)]">
+            <img alt="陈子涵老师" className="size-full object-cover object-center" src="/teacher-avatar.jpg" />
           </div>
-          <div className="flex flex-col items-start justify-center whitespace-nowrap">
+          <div className="flex flex-col items-start whitespace-nowrap">
             <span
               style={{
                 fontSize: "14px",
-                fontWeight: "var(--font-weight-medium)",
+                fontWeight: 500,
                 color: "#101019",
                 lineHeight: "21px",
               }}
@@ -375,12 +288,12 @@ export function Sidebar() {
             <span
               style={{
                 fontSize: "10px",
-                fontWeight: "var(--font-weight-regular)",
+                fontWeight: 400,
                 color: "#838bab",
                 lineHeight: "15px",
               }}
             >
-              教师 ID: 135121
+              ID: 1351213444
             </span>
           </div>
         </button>

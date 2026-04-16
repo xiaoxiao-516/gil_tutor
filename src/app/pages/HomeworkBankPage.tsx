@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router";
+import { showToast } from "../components/CustomToast";
+import { PublishConfirmDialog } from "../components/PublishConfirmDialog";
 import svgPaths from "../../imports/svg-hrhi0uopqy";
-import IcNavBack from "../../imports/IcNavBack";
+import svgPathsUpload from "../../imports/svg-pzealc5p9r";
 
 // ─── Types ───
 interface TreeNode {
@@ -10,14 +11,13 @@ interface TreeNode {
   children?: TreeNode[];
 }
 
-interface HomeworkItem {
+export interface HomeworkItem {
   id: string;
   number: string;
   content: string;
   options: string[];
   tags: string[];
   joined: boolean;
-  starred: boolean;
 }
 
 // ─── Mock Data ───
@@ -89,7 +89,6 @@ const mockHomeworkItems: HomeworkItem[] = [
     ],
     tags: ["2020年·江西省·期末", "单选", "简单"],
     joined: true,
-    starred: true,
   },
   {
     id: "hw2",
@@ -99,7 +98,6 @@ const mockHomeworkItems: HomeworkItem[] = [
     options: ["A. 1", "B. 3", "C. -1", "D. 5"],
     tags: ["2021年·北京·期中", "单选", "中等"],
     joined: false,
-    starred: false,
   },
   {
     id: "hw3",
@@ -109,7 +107,6 @@ const mockHomeworkItems: HomeworkItem[] = [
     options: ["A. 13", "B. 15", "C. 17", "D. 19"],
     tags: ["2022年·广东省·高考模拟", "单选", "简单"],
     joined: false,
-    starred: false,
   },
   {
     id: "hw4",
@@ -119,17 +116,16 @@ const mockHomeworkItems: HomeworkItem[] = [
     options: ["A. 1", "B. 2", "C. 3", "D. 4"],
     tags: ["2023年·浙江·月考", "单选", "简单"],
     joined: false,
-    starred: true,
   },
 ];
 
 // ─── Filter Options ───
 const filterOptionsMap: Record<string, string[]> = {
+  学科: ["全部", "数学", "语文", "英语", "物理", "化学", "生物"],
   "题型": ["全部", "选择题", "填空题", "解答题", "判断题"],
   "难度": ["全部", "简单", "中等", "较难", "困难"],
   "地区": ["全部", "全国", "北京", "上海", "浙江", "江苏"],
   "年份": ["全部", "2026", "2025", "2024", "2023", "2022"],
-  "按最新排序": ["按最新排序", "按最早排序", "按难度排序", "按热度排序"],
 };
 
 // ─── Arrow Down Icon ───
@@ -166,24 +162,6 @@ function SearchIcon() {
             fillRule="evenodd"
           />
         </g>
-      </svg>
-    </div>
-  );
-}
-
-// ─── Star Icon ───
-function StarIcon({ filled }: { filled: boolean }) {
-  return (
-    <div className="relative shrink-0 size-[16px]">
-      <svg className="block size-full" fill="none" viewBox="0 0 16 16">
-        <path
-          d={filled ? svgPaths.p160a2e00 : svgPaths.p1906d680}
-          fill={filled ? "#FA9524" : "none"}
-          stroke={filled ? "#FA9524" : "#646B8A"}
-          strokeLinejoin="round"
-          strokeWidth="1.2"
-          transform="translate(1.5, 1.5)"
-        />
       </svg>
     </div>
   );
@@ -301,10 +279,27 @@ function Tag({ text }: { text: string }) {
 }
 
 // ─── Filter Button ───
-function FilterButton({ label }: { label: string }) {
+function FilterButton({
+  label,
+  value,
+  onChange,
+  options: optionsProp,
+}: {
+  label: string;
+  /** 受控：与页级状态同步（如学科） */
+  value?: string | null;
+  onChange?: (next: string | null) => void;
+  options?: string[];
+}) {
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState<string | null>(null);
+  const [internalSelected, setInternalSelected] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+  const controlled = onChange !== undefined;
+  const selected = controlled ? (value ?? null) : internalSelected;
+  const setSelected = (next: string | null) => {
+    if (controlled) onChange!(next);
+    else setInternalSelected(next);
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -317,9 +312,9 @@ function FilterButton({ label }: { label: string }) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
 
-  const options = filterOptionsMap[label] || ["全部"];
+  const options = optionsProp ?? filterOptionsMap[label] ?? ["全部"];
   const displayLabel = selected && selected !== "全部" ? selected : label;
-  const isActive = selected && selected !== "全部";
+  const isActive = Boolean(selected && selected !== "全部");
 
   return (
     <div className="relative" ref={ref}>
@@ -368,7 +363,7 @@ function FilterButton({ label }: { label: string }) {
                 onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = "var(--sidebar)"; }}
                 onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = "transparent"; }}
                 onClick={() => {
-                  setSelected(opt === "全部" || opt === label ? null : opt);
+                  setSelected(opt === "全部" ? null : opt);
                   setOpen(false);
                 }}
               >
@@ -382,15 +377,35 @@ function FilterButton({ label }: { label: string }) {
   );
 }
 
+/** 右上角排序：仅文案 + 点击，无下拉箭头与菜单 */
+function LatestSortTextButton() {
+  return (
+    <button
+      type="button"
+      className="cursor-pointer border-none bg-transparent p-0"
+      onClick={() => showToast("已按最新排序", "success")}
+    >
+      <span
+        style={{
+          fontSize: "var(--text-base)",
+          fontWeight: "var(--font-weight-regular)",
+          color: "#444963",
+          lineHeight: "1.5",
+        }}
+      >
+        按最新排序
+      </span>
+    </button>
+  );
+}
+
 // ─── Homework Card ───
 function HomeworkCard({
   item,
   onToggleJoin,
-  onToggleStar,
 }: {
   item: HomeworkItem;
   onToggleJoin: (id: string) => void;
-  onToggleStar: (id: string) => void;
 }) {
   const [showAnswer, setShowAnswer] = useState(false);
 
@@ -485,17 +500,6 @@ function HomeworkCard({
               </div>
             </button>
 
-            {/* Divider */}
-            <div className="h-[12px] w-0" style={{ borderLeft: "1px solid #E9ECF5" }} />
-
-            {/* Star */}
-            <button
-              className="cursor-pointer"
-              onClick={() => onToggleStar(item.id)}
-            >
-              <StarIcon filled={item.starred} />
-            </button>
-
             {/* Join/Cancel button */}
             <button
               className="flex items-center justify-center h-[32px] w-[80px] rounded-[16px] bg-white cursor-pointer"
@@ -526,13 +530,16 @@ function HomeworkCard({
   );
 }
 
-// ─── Main Page ───
-export function HomeworkBankPage() {
-  const navigate = useNavigate();
+// ─── 作业库：整页与布置弹窗共用 ───
+export interface HomeworkBankWorkspaceProps {
+  variant: "page" | "modal";
+  onClose?: () => void;
+  onConfirm?: (items: HomeworkItem[]) => void;
+}
+
+export function HomeworkBankWorkspace({ variant, onClose, onConfirm }: HomeworkBankWorkspaceProps) {
   const [searchText, setSearchText] = useState("");
-  const [selectedSubject, setSelectedSubject] = useState("数学");
-  const [subjectDropdownOpen, setSubjectDropdownOpen] = useState(false);
-  const subjectRef = useRef<HTMLDivElement>(null);
+  const [selectedSubject, setSelectedSubject] = useState<string | null>("数学");
 
   const [treeMode, setTreeMode] = useState<"chapter" | "knowledge">("chapter");
   const defaultExpanded: Record<string, string[]> = {
@@ -544,6 +551,7 @@ export function HomeworkBankPage() {
   );
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>("ch1");
   const [items, setItems] = useState<HomeworkItem[]>(mockHomeworkItems);
+  const [showPublishDialog, setShowPublishDialog] = useState(false);
 
   const chapterTextbooks = [
     "高中数学-人教B版-必修1",
@@ -561,8 +569,6 @@ export function HomeworkBankPage() {
   const [textbookDropdownOpen, setTextbookDropdownOpen] = useState(false);
   const textbookRef = useRef<HTMLDivElement>(null);
 
-  const subjects = ["数学", "语文", "英语", "物理", "化学", "生物"];
-
   const joinedCount = items.filter((i) => i.joined).length;
 
   useEffect(() => {
@@ -572,9 +578,6 @@ export function HomeworkBankPage() {
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (subjectRef.current && !subjectRef.current.contains(e.target as Node)) {
-        setSubjectDropdownOpen(false);
-      }
       if (textbookRef.current && !textbookRef.current.contains(e.target as Node)) {
         setTextbookDropdownOpen(false);
       }
@@ -598,167 +601,87 @@ export function HomeworkBankPage() {
     );
   };
 
-  const toggleStar = (id: string) => {
-    setItems((prev) =>
-      prev.map((q) => (q.id === id ? { ...q, starred: !q.starred } : q))
-    );
+  const handleModalConfirm = () => {
+    if (variant !== "modal") return;
+    const joined = items.filter((i) => i.joined);
+    if (joined.length === 0) {
+      showToast("请先加入作业", "warning");
+      return;
+    }
+    onConfirm?.(joined);
+    setItems((prev) => prev.map((q) => ({ ...q, joined: false })));
+    onClose?.();
   };
 
+  const primaryFooterLabel = variant === "modal" ? "确认" : "去布置";
+
   return (
-    <div className="flex flex-col flex-1 min-h-0">
+    <div className="flex min-h-0 flex-1 flex-col">
       {/* Header */}
-      <div className="flex items-center h-[48px] shrink-0 mb-[4px]">
+      <div className="mb-[4px] flex h-[48px] shrink-0 items-center gap-3">
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="shrink-0 size-[30px] cursor-pointer"
-          >
-            <IcNavBack />
-          </button>
           <span
             style={{
-              fontSize: "var(--text-h3)",
-              fontWeight: "var(--font-weight-semibold)",
-              color: "var(--card-foreground)",
-              lineHeight: "1.5",
+              fontSize: "var(--text-lg)",
+              fontWeight: "var(--font-weight-medium)",
+              lineHeight: "30px",
+              color: "var(--page-title-muted)",
             }}
           >
             作业
           </span>
         </div>
 
-        <div className="flex items-center gap-[12px] ml-auto">
-          {/* Search */}
-          <div
-            className="flex items-center gap-[6px] h-[32px] px-[12px] rounded-[16px] bg-white"
-            style={{ border: "1px solid #cfd5e8" }}
-          >
-            <input
-              className="bg-transparent outline-none flex-1 w-[190px]"
-              placeholder="在作业资源中搜索"
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              style={{
-                fontSize: "var(--text-base)",
-                fontWeight: "var(--font-weight-regular)",
-                color: "var(--card-foreground)",
-                lineHeight: "1.5",
-              }}
-            />
-            <SearchIcon />
-          </div>
-
-          {/* Subject selector */}
-          <div className="relative" ref={subjectRef}>
+        <div className="ml-auto flex min-w-0 flex-1 flex-wrap items-center justify-end gap-[12px]">
+          {variant === "modal" && onClose ? (
             <button
-              className="flex gap-[6px] items-center h-[32px] px-[16px] rounded-[18px] cursor-pointer"
-              style={{ border: "1px solid #e9ecf5" }}
-              onClick={() => setSubjectDropdownOpen(!subjectDropdownOpen)}
+              type="button"
+              onClick={onClose}
+              className="flex h-[32px] w-[32px] shrink-0 cursor-pointer items-center justify-center rounded-[8px] border-none bg-transparent transition-colors hover:bg-[#f4f7fe]"
+              aria-label="关闭"
             >
-              <span
-                style={{
-                  fontSize: "var(--text-base)",
-                  fontWeight: "var(--font-weight-medium)",
-                  color: "#444963",
-                  lineHeight: "1.5",
-                }}
-              >
-                {selectedSubject}
-              </span>
-              <ArrowDownIcon color="#444963" size={12} />
+              <svg className="block" width="14" height="14" viewBox="0 0 14.0237 14.0237" fill="none">
+                <path clipRule="evenodd" d={svgPathsUpload.p37c48700} fill="#646B8A" fillRule="evenodd" />
+              </svg>
             </button>
-            {subjectDropdownOpen && (
-              <div
-                className="absolute right-0 top-[36px] bg-white rounded-[12px] p-[4px] z-50 min-w-[100px]"
-                style={{ boxShadow: "0px 8px 32px rgba(16,18,25,0.08)" }}
-              >
-                {subjects.map((s) => (
-                  <button
-                    key={s}
-                    className="w-full text-left px-[16px] py-[8px] rounded-[8px] cursor-pointer hover:bg-[rgba(235,241,255,0.5)]"
-                    style={{
-                      fontSize: "var(--text-base)",
-                      fontWeight:
-                        selectedSubject === s
-                          ? "var(--font-weight-medium)"
-                          : "var(--font-weight-regular)",
-                      color:
-                        selectedSubject === s
-                          ? "var(--sidebar-primary)"
-                          : "var(--card-foreground)",
-                    }}
-                    onClick={() => {
-                      setSelectedSubject(s);
-                      setSubjectDropdownOpen(false);
-                    }}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          ) : null}
         </div>
       </div>
 
       {/* Content area */}
       <div className="flex gap-[16px] flex-1 pt-[16px] min-h-0">
         {/* Tree sidebar */}
-        <div
-          className="shrink-0 w-[234px] bg-white rounded-[16px] flex flex-col overflow-hidden"
-          style={{ border: "1px solid #e9ecf5" }}
-        >
+        <div className="shrink-0 w-[234px] bg-white rounded-[16px] flex flex-col overflow-hidden">
           <div className="flex flex-col gap-[12px] p-[16px] pb-[24px] flex-1 overflow-y-auto scrollbar-thin" style={{ scrollbarGutter: "stable" }}>
             {/* Tree mode toggle */}
-            <div
-              className="relative flex w-full rounded-[6px] p-[2px]"
-              style={{ backgroundColor: "rgba(244, 247, 254, 0.6)" }}
-            >
-              <div
-                className="absolute top-[2px] bottom-[2px] rounded-[5px] bg-white transition-all duration-200 ease-in-out"
-                style={{
-                  width: "calc(50% - 2px)",
-                  left: treeMode === "chapter" ? "2px" : "calc(50%)",
-                  boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.08)",
-                }}
-              />
+            <div className="flex w-full items-start gap-[2px]">
               <button
-                className="relative z-[1] flex-1 flex items-center justify-center py-[6px] rounded-[5px] cursor-pointer bg-transparent"
+                className="flex flex-1 cursor-pointer items-center justify-center rounded-[4px] bg-transparent px-[12px] py-[2px]"
                 onClick={() => { setTreeMode("chapter"); setExpandedIds(new Set(defaultExpanded.chapter)); setSelectedNodeId("ch1"); }}
               >
                 <span
                   style={{
-                    fontSize: "var(--text-base)",
-                    fontWeight:
-                      treeMode === "chapter"
-                        ? "var(--font-weight-medium)"
-                        : "var(--font-weight-regular)",
-                    color:
-                      treeMode === "chapter"
-                        ? "var(--sidebar-primary)"
-                        : "var(--muted-foreground)",
+                    fontSize: 14,
+                    fontWeight: treeMode === "chapter" ? 600 : 400,
+                    color: treeMode === "chapter" ? "#4a4fed" : "#838bab",
                     lineHeight: "1.5",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   按章节
                 </span>
               </button>
               <button
-                className="relative z-[1] flex-1 flex items-center justify-center py-[6px] rounded-[5px] cursor-pointer bg-transparent"
+                className="flex flex-1 cursor-pointer items-center justify-center rounded-[4px] bg-transparent px-[12px] py-[2px]"
                 onClick={() => { setTreeMode("knowledge"); setExpandedIds(new Set(defaultExpanded.knowledge)); setSelectedNodeId("k1-1-1"); }}
               >
                 <span
                   style={{
-                    fontSize: "var(--text-base)",
-                    fontWeight:
-                      treeMode === "knowledge"
-                        ? "var(--font-weight-medium)"
-                        : "var(--font-weight-regular)",
-                    color:
-                      treeMode === "knowledge"
-                        ? "var(--sidebar-primary)"
-                        : "var(--muted-foreground)",
+                    fontSize: 14,
+                    fontWeight: treeMode === "knowledge" ? 600 : 400,
+                    color: treeMode === "knowledge" ? "#4a4fed" : "#838bab",
                     lineHeight: "1.5",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   按知识点
@@ -841,10 +764,7 @@ export function HomeworkBankPage() {
         </div>
 
         {/* Questions area */}
-        <div
-          className="flex-1 bg-white rounded-[16px] flex flex-col overflow-hidden min-h-0"
-          style={{ border: "1px solid #e9ecf5" }}
-        >
+        <div className="flex-1 bg-white rounded-[16px] flex flex-col overflow-hidden min-h-0">
           <div className="flex flex-col gap-[16px] p-[20px] flex-1 overflow-y-auto scrollbar-thin">
             {/* Filters + Results count */}
             <div className="shrink-0 sticky top-[-20px] z-10 bg-white -mx-[20px] px-[20px] -mt-[16px]">
@@ -852,13 +772,38 @@ export function HomeworkBankPage() {
                 className="flex items-center justify-between pt-[20px] pb-[20px]"
                 style={{ borderBottom: "1px solid #e9ecf5" }}
               >
-                <div className="flex gap-[20px] items-center">
+                <div className="flex gap-[20px] items-center flex-wrap">
+                  <FilterButton
+                    label="学科"
+                    value={selectedSubject}
+                    onChange={setSelectedSubject}
+                  />
                   <FilterButton label="题型" />
                   <FilterButton label="难度" />
                   <FilterButton label="地区" />
                   <FilterButton label="年份" />
                 </div>
-                <FilterButton label="按最新排序" />
+                <div className="flex items-center gap-[12px]">
+                  <div
+                    className="flex h-[32px] items-center gap-[6px] rounded-[16px] bg-white px-[12px]"
+                    style={{ border: "1px solid #cfd5e8" }}
+                  >
+                    <input
+                      className="w-[190px] min-w-0 bg-transparent outline-none"
+                      placeholder="在作业资源中搜索"
+                      value={searchText}
+                      onChange={(e) => setSearchText(e.target.value)}
+                      style={{
+                        fontSize: "var(--text-base)",
+                        fontWeight: "var(--font-weight-regular)",
+                        color: "var(--card-foreground)",
+                        lineHeight: "1.5",
+                      }}
+                    />
+                    <SearchIcon />
+                  </div>
+                  <LatestSortTextButton />
+                </div>
               </div>
               <div className="flex gap-[8px] items-center py-[12px]">
                 <span
@@ -891,7 +836,6 @@ export function HomeworkBankPage() {
                   key={q.id}
                   item={q}
                   onToggleJoin={toggleJoin}
-                  onToggleStar={toggleStar}
                 />
               ))}
             </div>
@@ -907,22 +851,76 @@ export function HomeworkBankPage() {
           <span style={{ color: "var(--primary)" }}>{joinedCount}</span>
           <span style={{ color: "#444963" }}> 题</span>
         </p>
-        <div className="relative z-[1] flex items-center gap-[12px] shrink-0">
+        <div className="relative z-[1] flex shrink-0 items-center gap-[12px]">
           <button
-            className="flex items-center justify-center h-[36px] w-[100px] py-[8px] rounded-[18px] bg-white relative cursor-pointer shrink-0"
+            type="button"
+            onClick={() => {
+              if (joinedCount === 0) return;
+              setItems((prev) => prev.map((q) => ({ ...q, joined: false })));
+              showToast("已清空已选作业", "success");
+            }}
+            disabled={joinedCount === 0}
+            className="flex h-[36px] w-[100px] cursor-pointer items-center justify-center rounded-[18px] border border-solid bg-white transition-colors hover:opacity-90 disabled:cursor-not-allowed"
+            style={{
+              borderColor: joinedCount > 0 ? "var(--primary)" : "#bbcbfc",
+            }}
           >
-            <div aria-hidden className="absolute inset-0 pointer-events-none rounded-[18px]" style={{ border: "1px solid #dfe3f0" }} />
-            <span style={{ fontSize: "var(--text-base)", fontWeight: "var(--font-weight-medium)", color: "#444963", lineHeight: "1.5" }}>取消布置</span>
+            <span
+              style={{
+                fontSize: "var(--text-base)",
+                fontWeight: "var(--font-weight-medium)",
+                color: joinedCount > 0 ? "var(--primary)" : "#bbcbfc",
+                lineHeight: "1.5",
+                whiteSpace: "nowrap",
+              }}
+            >
+              清空
+            </span>
           </button>
           <button
-            className={`flex items-center justify-center h-[36px] w-[100px] py-[8px] rounded-[18px] shrink-0 ${joinedCount > 0 ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
-            style={{ backgroundColor: joinedCount > 0 ? "var(--primary)" : "#C0C4D0" }}
+            type="button"
+            className={`flex h-[36px] w-[100px] shrink-0 items-center justify-center rounded-[18px] border-none transition-colors hover:opacity-90 ${
+              joinedCount > 0 ? "cursor-pointer" : "cursor-not-allowed"
+            }`}
+            style={{
+              backgroundColor: joinedCount > 0 ? "var(--primary)" : "#bbcbfc",
+            }}
             disabled={joinedCount === 0}
+            onClick={() => {
+              if (joinedCount === 0) return;
+              if (variant === "modal") {
+                handleModalConfirm();
+              } else {
+                setShowPublishDialog(true);
+              }
+            }}
           >
-            <span style={{ fontSize: "var(--text-base)", fontWeight: "var(--font-weight-medium)", color: "white", lineHeight: "1.5" }}>去布置</span>
+            <span style={{ fontSize: "var(--text-base)", fontWeight: "var(--font-weight-medium)", color: "white", lineHeight: "1.5" }}>
+              {primaryFooterLabel}
+            </span>
           </button>
         </div>
       </div>
+
+      {variant === "page" && (
+        <PublishConfirmDialog
+          open={showPublishDialog}
+          joinedCount={joinedCount}
+          onCancel={() => setShowPublishDialog(false)}
+          onConfirm={({ taskName }) => {
+            setShowPublishDialog(false);
+            showToast(`已成功布置「${taskName}」，共 ${joinedCount} 项作业`, "success");
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+export function HomeworkBankPage() {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <HomeworkBankWorkspace variant="page" />
     </div>
   );
 }

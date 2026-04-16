@@ -127,7 +127,7 @@ export function DiagnosisModal({ onClose, onAdd, buildDiagnosisUrl }: DiagnosisM
           <h3
             style={{
               fontSize: "var(--text-h3)",
-              fontWeight: "var(--font-weight-semibold)",
+              fontWeight: "var(--font-weight-page-title)",
               color: "var(--foreground)",
               lineHeight: 1.5,
             }}

@@ -43,7 +43,7 @@ export function CoursePreviewPage() {
           className="flex-1"
           style={{
             fontSize: "var(--text-h3)",
-            fontWeight: "var(--font-weight-semibold)",
+            fontWeight: "var(--font-weight-page-title)",
             color: "var(--foreground)",
           }}
         >

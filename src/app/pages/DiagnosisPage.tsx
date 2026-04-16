@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router";
 // DiagnosisPage - Diagnosis Management
 import { showToast } from "../components/CustomToast";
 import { DiagnosisModal } from "../components/DiagnosisModal";
 import { CustomSelect } from "../components/CustomSelect";
+import { getDiagnosisPlan } from "../mock/schedulePlanMock";
 import { Copy, FileText, CalendarDays, Ban, Search } from "lucide-react";
 import svgPaginationArrow from "../../imports/svg-4gue8yfe2q";
 import svgPaginationArrowRight from "../../imports/svg-zplh3qt6hx";
@@ -130,11 +132,11 @@ const initialRows: DiagnosisRow[] = Array.from({ length: 48 }).map((_, idx) => {
 });
 
 const thStyle = {
-  height: "44px",
-  padding: "12px 10px",
+  height: "40px",
+  padding: "10px 10px",
   fontSize: "var(--text-base)",
   fontWeight: "var(--font-weight-regular)" as const,
-  color: "#646B8A",
+  color: "var(--table-header-text)",
 };
 
 const tdStyle = {
@@ -146,6 +148,7 @@ const tdStyle = {
 };
 
 export function DiagnosisPage() {
+  const navigate = useNavigate();
   const [rows, setRows] = useState<DiagnosisRow[]>(initialRows);
   const [filteredRows, setFilteredRows] = useState<DiagnosisRow[]>(initialRows);
   const [currentPage, setCurrentPage] = useState(1);
@@ -157,9 +160,9 @@ export function DiagnosisPage() {
   const [voidConfirmId, setVoidConfirmId] = useState<string | null>(null);
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipContent, setTooltipContent] = useState("");
+  const [editPhoneRow, setEditPhoneRow] = useState<DiagnosisRow | null>(null);
+  const [editPhoneValue, setEditPhoneValue] = useState("");
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
-  const [pageSize, setPageSize] = useState(PAGE_SIZE);
-  const [showPageSizeDropdown, setShowPageSizeDropdown] = useState(false);
 
   // Auto-filter whenever any search criteria or rows change
   useEffect(() => {
@@ -183,9 +186,9 @@ export function DiagnosisPage() {
     setCurrentPage(1);
   };
 
-  const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
-  const start = (currentPage - 1) * pageSize;
-  const pageRows = filteredRows.slice(start, start + pageSize);
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const pageRows = filteredRows.slice(start, start + PAGE_SIZE);
 
   const statusBadge = (status: string) => {
     const colors: Record<string, string> = {
@@ -250,13 +253,15 @@ export function DiagnosisPage() {
 
   return (
     <>
-      {/* Page title + action on same line */}
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex flex-col flex-1 min-h-0 pb-6">
+      {/* Page title + primary action */}
+      <div className="flex h-[68px] shrink-0 items-center justify-between">
         <h2
           style={{
-            fontSize: "var(--text-h3)",
-            fontWeight: "var(--font-weight-bold)",
-            color: "var(--card-foreground)",
+            fontSize: "var(--text-lg)",
+            fontWeight: "var(--font-weight-medium)",
+            lineHeight: "30px",
+            color: "var(--page-title-muted)",
           }}
         >
           诊断管理
@@ -265,7 +270,7 @@ export function DiagnosisPage() {
           onClick={() => setShowModal(true)}
           className="relative w-[108px] h-[36px] rounded-[36px] flex items-center justify-center gap-[2px] cursor-pointer hover:opacity-90 transition-opacity"
           style={{
-            backgroundImage: "linear-gradient(219.456deg, rgba(255, 255, 255, 0.2) 12.811%, rgba(255, 255, 255, 0) 64.413%), linear-gradient(90deg, rgb(83, 118, 255) 0%, rgb(83, 118, 255) 100%)",
+            background: "var(--primary-gradient)",
           }}
         >
           <div className="relative shrink-0 size-[16px]">
@@ -287,9 +292,9 @@ export function DiagnosisPage() {
         </button>
       </div>
 
-      <div className="pt-2 pb-0 flex-1 flex flex-col min-h-0">
+      <div className="dashboard-page-panel flex flex-col flex-1 min-h-0 p-4 gap-5">
         {/* Search filters */}
-        <div className="flex gap-4 mb-6 items-center">
+        <div className="flex gap-4 items-center shrink-0">
           <div className="grid grid-cols-4 gap-4 flex-1">
             <div className="relative">
               <div className="relative">
@@ -304,11 +309,12 @@ export function DiagnosisPage() {
                   value={searchName}
                   onChange={(e) => setSearchName(e.target.value)}
                   placeholder="请输入学生姓名"
-                  className="w-full pl-9 pr-3 py-[7px] bg-input-background border border-border focus:outline-none focus:border-primary focus:ring-0 rounded-[6px] placeholder:text-muted-foreground"
+                  className="w-full h-10 pl-9 pr-3 bg-input-background border focus:outline-none focus:border-primary focus:ring-0 rounded-[8px] placeholder:text-[#838bab]"
                   style={{
                     fontSize: "var(--text-base)",
                     fontWeight: "var(--font-weight-regular)",
                     color: "var(--card-foreground)",
+                    borderColor: "var(--input-border-soft)",
                   }}
                 />
               </div>
@@ -338,7 +344,7 @@ export function DiagnosisPage() {
                   { label: "近30天", value: "近30天" },
                   { label: "本月", value: "本月" },
                 ]}
-                placeholder="完成时间"
+                placeholder="测评完成时间周期"
               />
             </div>
             <div>
@@ -360,7 +366,7 @@ export function DiagnosisPage() {
           <div className="flex gap-3 shrink-0">
             <button
               onClick={resetSearch}
-              className="flex items-center justify-center gap-[4px] px-4 py-2 rounded-full hover:bg-muted transition-colors min-w-[112px]"
+              className="flex items-center justify-center gap-1 shrink-0 self-stretch rounded-full hover:bg-[#f4f7fe] transition-colors px-1"
               style={{
                 fontSize: "var(--text-base)",
                 fontWeight: "var(--font-weight-medium)",
@@ -368,23 +374,23 @@ export function DiagnosisPage() {
             >
               <div className="relative shrink-0 size-[16px]">
                 <svg className="block size-full" fill="none" viewBox="0 0 16 16">
-                  <path d="M14 2.66667V8" stroke="#2043F0" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-                  <path d="M2 8V13.3333" stroke="#2043F0" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
-                  <path d={svgReset.p2c2b0280} stroke="#2043F0" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
+                  <path d="M14 2.66667V8" stroke="var(--accent)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
+                  <path d="M2 8V13.3333" stroke="var(--accent)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
+                  <path d={svgReset.p2c2b0280} stroke="var(--accent)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.33333" />
                 </svg>
               </div>
-              <span style={{ color: "#2043f0" }}>重置</span>
+              <span style={{ color: "var(--accent)" }}>重置</span>
             </button>
           </div>
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto rounded-tl-[4px] rounded-tr-[4px] overflow-clip flex-1 min-h-0 overflow-y-auto">
+        <div className="overflow-x-auto rounded-tl-[8px] rounded-tr-[8px] overflow-clip flex-1 min-h-0 overflow-y-auto">
           <table className="w-full border-collapse table-fixed">
-            <colgroup><col style={{ width: "8%" }} /><col style={{ width: "10%" }} /><col style={{ width: "6%" }} /><col style={{ width: "6%" }} /><col style={{ width: "10%" }} /><col style={{ width: "8%" }} /><col style={{ width: "14%" }} /><col style={{ width: "16%" }} /><col style={{ width: "9%" }} /><col style={{ width: "13%" }} /></colgroup>
-            <thead className="sticky top-0 z-10" style={{ backgroundColor: "#F4F7FE" }}>
+            <colgroup><col style={{ width: "8%" }} /><col style={{ width: "13%" }} /><col style={{ width: "5%" }} /><col style={{ width: "5%" }} /><col style={{ width: "10%" }} /><col style={{ width: "8%" }} /><col style={{ width: "14%" }} /><col style={{ width: "15%" }} /><col style={{ width: "9%" }} /><col style={{ width: "13%" }} /></colgroup>
+            <thead className="sticky top-0 z-10" style={{ backgroundColor: "var(--dashboard-canvas)" }}>
               <tr>
-                <th className="text-left first:rounded-tl-[4px] whitespace-nowrap" style={thStyle}>学生姓名</th>
+                <th className="text-left first:rounded-tl-[8px] whitespace-nowrap" style={thStyle}>学生姓名</th>
                 <th className="text-left whitespace-nowrap" style={thStyle}>家长手机号</th>
                 <th className="text-left whitespace-nowrap" style={thStyle}>年级</th>
                 <th className="text-left whitespace-nowrap" style={thStyle}>科目</th>
@@ -393,7 +399,7 @@ export function DiagnosisPage() {
                 <th className="whitespace-nowrap text-center" style={thStyle}>完成时间</th>
                 <th className="whitespace-nowrap text-center" style={thStyle}>操作项</th>
                 <th className="text-left whitespace-nowrap" style={thStyle}>创建人</th>
-                <th className="text-left last:rounded-tr-[4px] whitespace-nowrap" style={thStyle}>创建日期</th>
+                <th className="text-left last:rounded-tr-[8px] whitespace-nowrap" style={thStyle}>创建日期</th>
               </tr>
             </thead>
             <tbody>
@@ -409,7 +415,21 @@ export function DiagnosisPage() {
                   <td style={tdStyle}>{row.studentName}</td>
 
                   {/* 家长手机号 */}
-                  <td className="whitespace-nowrap" style={tdStyle}>{row.phone}</td>
+                  <td className="whitespace-nowrap" style={tdStyle}>
+                    <div className="flex items-center gap-[6px]">
+                      <span>{row.phone}</span>
+                      <button
+                        type="button"
+                        className="flex shrink-0 cursor-pointer items-center justify-center rounded-[4px] p-[2px] opacity-0 transition-opacity hover:bg-[#f0f4ff] group-hover:opacity-100 [tr:hover_&]:opacity-100"
+                        style={{ color: "#838bab" }}
+                        onClick={() => { setEditPhoneRow(row); setEditPhoneValue(row.phone); }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                          <path d="M8.5 2.5L11.5 5.5M1.5 12.5L2.1 9.9L9.8 2.2C10.2 1.8 10.8 1.8 11.2 2.2L11.8 2.8C12.2 3.2 12.2 3.8 11.8 4.2L4.1 11.9L1.5 12.5Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
 
                   {/* 年级 */}
                   <td style={tdStyle}>{row.grade}</td>
@@ -495,17 +515,30 @@ export function DiagnosisPage() {
                           <div aria-hidden="true" className="absolute inset-0 pointer-events-none rounded-[18px] border border-[#e0eaff]" />
                           诊断报告
                         </button>
-                        <button
-                          className="relative inline-flex items-center justify-center gap-1 h-[24px] min-w-[60px] px-2 rounded-[18px] bg-[#ebf1ff] text-primary hover:opacity-85 transition-opacity whitespace-nowrap shrink-0"
-                          style={{
-                            fontSize: "12px",
-                            fontWeight: "var(--font-weight-regular)",
-                          }}
-                          onClick={() => showToast("排课计划功能待完善", "info")}
-                        >
-                          <div aria-hidden="true" className="absolute inset-0 pointer-events-none rounded-[18px] border border-[#e0eaff]" />
-                          排课计划
-                        </button>
+                        {(() => {
+                          const hasSchedulePlan = !!getDiagnosisPlan(row.id);
+                          return (
+                            <button
+                              className="relative inline-flex items-center justify-center gap-1 h-[24px] min-w-[60px] px-2 rounded-[18px] bg-[#ebf1ff] text-primary hover:opacity-85 transition-opacity whitespace-nowrap shrink-0"
+                              style={{
+                                fontSize: "12px",
+                                fontWeight: "var(--font-weight-regular)",
+                              }}
+                              onClick={() =>
+                                navigate(`/dashboard/schedule-plan/${row.id}`, {
+                                  state: {
+                                    studentName: row.studentName,
+                                    grade: row.grade,
+                                    subject: row.subject,
+                                  },
+                                })
+                              }
+                            >
+                              <div aria-hidden="true" className="absolute inset-0 pointer-events-none rounded-[18px] border border-[#e0eaff]" />
+                              {hasSchedulePlan ? "查看排课" : "去排课"}
+                            </button>
+                          );
+                        })()}
                       </div>
                     )}
                     {row.status === "已作废" && (
@@ -533,7 +566,7 @@ export function DiagnosisPage() {
         </div>
 
         {/* Pagination */}
-        <div className="shrink-0 mt-auto px-0 py-3 flex items-center justify-center">
+        <div className="shrink-0 mt-auto px-0 pt-1 pb-0 flex items-center justify-center">
           <div className="flex gap-[8px] items-center">
             {/* Left arrow */}
             <button
@@ -568,16 +601,14 @@ export function DiagnosisPage() {
                   key={page}
                   onClick={() => setCurrentPage(page)}
                   className="flex items-center justify-center p-[2px] rounded-[28px] size-[28px] cursor-pointer transition-colors"
-                  style={isActive ? {
-                    backgroundImage: "linear-gradient(220.815deg, rgba(255, 255, 255, 0.2) 13.197%, rgba(255, 255, 255, 0) 86.803%), linear-gradient(90deg, rgb(83, 118, 255) 0%, rgb(83, 118, 255) 100%)",
-                  } : undefined}
+                  style={isActive ? { backgroundColor: "#ebf1ff" } : undefined}
                 >
                   <span
                     className="whitespace-nowrap text-center"
                     style={{
                       fontSize: "14px",
                       lineHeight: "1.5",
-                      color: isActive ? "#ffffff" : "#444963",
+                      color: isActive ? "#4a4fed" : "#444963",
                       fontFeatureSettings: "'lnum', 'pnum'",
                     }}
                   >
@@ -601,54 +632,9 @@ export function DiagnosisPage() {
                 </div>
               </div>
             </button>
-
-            {/* Page size selector */}
-            <div className="relative">
-              <button
-                onClick={() => setShowPageSizeDropdown(!showPageSizeDropdown)}
-                className="relative flex gap-[4px] h-[28px] items-center justify-center px-[16px] py-[2px] rounded-[28px] cursor-pointer"
-                style={{ backgroundColor: "rgba(255,255,255,0)" }}
-              >
-                <div aria-hidden="true" className="absolute inset-0 pointer-events-none rounded-[28px]" style={{ border: "1px solid #e9ecf5" }} />
-                <span
-                  className="whitespace-nowrap"
-                  style={{
-                    fontSize: "12px",
-                    lineHeight: "1.5",
-                    color: "#101019",
-                  }}
-                >
-                  {pageSize}条/页
-                </span>
-                <svg className="shrink-0" width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="#646B8A" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-              {showPageSizeDropdown && (
-                <div className="absolute bottom-full mb-1 left-0 bg-white rounded-[8px] py-[4px] z-10" style={{ border: "1px solid #e9ecf5", boxShadow: "0px 4px 12px rgba(0,0,0,0.08)" }}>
-                  {[10, 15, 20, 30].map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => {
-                        setPageSize(size);
-                        setCurrentPage(1);
-                        setShowPageSizeDropdown(false);
-                      }}
-                      className="block w-full px-[16px] py-[4px] text-left hover:bg-[#f4f7fe] transition-colors cursor-pointer whitespace-nowrap"
-                      style={{
-                        fontSize: "12px",
-                        lineHeight: "1.5",
-                        color: size === pageSize ? "#4A4FED" : "#101019",
-                      }}
-                    >
-                      {size}条/页
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
         </div>
+      </div>
       </div>
 
       {/* Tooltip */}
@@ -752,6 +738,75 @@ export function DiagnosisPage() {
               </div>
             </div>
             <div aria-hidden="true" className="absolute inset-0 pointer-events-none rounded-[16px] border border-[#e9ecf5]" style={{ boxShadow: "0px 8px 32px 0px rgba(16,18,25,0.1)" }} />
+          </div>
+        </div>
+      )}
+      {/* 编辑手机号弹窗 */}
+      {editPhoneRow && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          style={{ backgroundColor: "rgba(0,0,0,0.3)" }}
+          onClick={() => setEditPhoneRow(null)}
+        >
+          <div
+            className="flex w-full max-w-[440px] flex-col overflow-hidden rounded-[16px] bg-white"
+            style={{ boxShadow: "0px 8px 32px 0px rgba(16,18,25,0.1)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex h-[52px] shrink-0 items-center px-[24px]">
+              <span style={{ fontSize: 16, fontWeight: 600, color: "#101019" }}>编辑手机号</span>
+            </div>
+            <div className="flex flex-col gap-[16px] px-[24px] py-[20px]">
+              <div className="flex items-center gap-[12px]">
+                <label className="shrink-0" style={{ fontSize: 14, color: "#444963" }}>学生姓名</label>
+                <span style={{ fontSize: 14, color: "#101019" }}>{editPhoneRow.studentName}</span>
+              </div>
+              <div className="flex items-center gap-[12px]">
+                <label className="shrink-0" style={{ fontSize: 14, color: "#444963" }}>手机号码</label>
+                <input
+                  className="h-[40px] min-w-0 flex-1 rounded-[8px] border border-solid border-[#e9ecf5] bg-white px-[12px] outline-none focus:border-[#6574fc]"
+                  style={{ fontSize: 14, color: "#101019" }}
+                  value={editPhoneValue}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(/[^\d]/g, "");
+                    if (v.length <= 11) setEditPhoneValue(v);
+                  }}
+                  placeholder="请输入手机号"
+                  maxLength={11}
+                />
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-[12px] px-[24px] py-[16px]">
+              <button
+                type="button"
+                onClick={() => setEditPhoneRow(null)}
+                className="flex h-[36px] w-[88px] cursor-pointer items-center justify-center rounded-[18px] bg-white transition-colors hover:bg-[#f8f9fc]"
+                style={{ border: "1px solid #dfe3f0" }}
+              >
+                <span style={{ fontSize: 14, fontWeight: 500, color: "#444963" }}>取消</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!editPhoneValue.trim()) {
+                    showToast("请输入手机号", "warning");
+                    return;
+                  }
+                  if (editPhoneValue.length !== 11) {
+                    showToast("请输入正确的11位手机号", "warning");
+                    return;
+                  }
+                  setRows(rows.map((r) => r.id === editPhoneRow.id ? { ...r, phone: editPhoneValue } : r));
+                  setFilteredRows(filteredRows.map((r) => r.id === editPhoneRow.id ? { ...r, phone: editPhoneValue } : r));
+                  showToast("手机号修改成功", "success");
+                  setEditPhoneRow(null);
+                }}
+                className="flex h-[36px] w-[88px] cursor-pointer items-center justify-center rounded-[18px] border-none transition-opacity hover:opacity-90"
+                style={{ backgroundColor: "#6574fc" }}
+              >
+                <span style={{ fontSize: 14, fontWeight: 500, color: "white" }}>确认</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

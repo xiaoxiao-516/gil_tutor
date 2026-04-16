@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import svgPaths from "../../imports/svg-4u36ajrmto";
@@ -200,10 +200,15 @@ export function ResourceBrowserDialog({
   open,
   onClose,
   onAddResource,
+  pickPublicMode = false,
+  onPickPublicConfirm,
 }: {
   open: boolean;
   onClose: () => void;
   onAddResource?: (resource: { id: string; name: string; type: string }) => void;
+  /** 布置页「手动添加 → 资源」：仅公共资源列表，底部「确认」加入清单（侧栏进资源中心仍为整页，不用此模式） */
+  pickPublicMode?: boolean;
+  onPickPublicConfirm?: (items: { id: string; name: string; type: string }[]) => void;
 }) {
   const [activeTab, setActiveTab] = useState<"my" | "public">("my");
   const [searchQuery, setSearchQuery] = useState("");
@@ -213,6 +218,16 @@ export function ResourceBrowserDialog({
   const [starredMap, setStarredMap] = useState<Record<string, boolean>>(
     Object.fromEntries(mockResources.map((r) => [r.id, r.starred]))
   );
+
+  useEffect(() => {
+    if (open) {
+      setSelectedIds(new Set());
+      setSearchQuery("");
+      setGradeFilter("全部");
+      setSubjectFilter("全部");
+      if (!pickPublicMode) setActiveTab("my");
+    }
+  }, [open, pickPublicMode]);
 
   const filteredResources = useMemo(() => {
     return mockResources.filter((r) => {
@@ -248,6 +263,18 @@ export function ResourceBrowserDialog({
     showToast(`已加入「${resource.name}」`, "success");
   };
 
+  const handlePickPublicConfirm = () => {
+    if (selectedIds.size === 0) {
+      showToast("请先选择资源", "warning");
+      return;
+    }
+    const items = mockResources
+      .filter((r) => selectedIds.has(r.id))
+      .map((r) => ({ id: r.id, name: r.name, type: r.type }));
+    onPickPublicConfirm?.(items);
+    onClose();
+  };
+
   if (!open) return null;
 
   return (
@@ -266,56 +293,73 @@ export function ResourceBrowserDialog({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.96 }}
             transition={{ duration: 0.2 }}
-            className="bg-white rounded-[16px] w-[860px] max-h-[80vh] flex flex-col"
+            className="flex max-h-[80vh] min-h-0 w-[860px] flex-col rounded-[16px] bg-white"
             style={{ boxShadow: "0px 8px 32px rgba(0,0,0,0.12)" }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-6 pt-5 pb-4" style={{ borderBottom: "1px solid var(--border)" }}>
+            <div className="flex items-center justify-between px-6 pb-4 pt-5" style={{ borderBottom: "1px solid var(--border)" }}>
               <div className="flex items-center gap-6">
-                {/* Tabs */}
-                <button
-                  className="relative bg-transparent border-none cursor-pointer px-0 pb-1"
-                  style={{
-                    fontSize: "16px",
-                    fontWeight: activeTab === "my" ? "var(--font-weight-semibold)" : "var(--font-weight-regular)",
-                    color: activeTab === "my" ? "var(--foreground)" : "var(--muted-foreground)",
-                  }}
-                  onClick={() => setActiveTab("my")}
-                >
-                  我的资源
-                  {activeTab === "my" && (
-                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[12px] h-[4px] rounded-[2px] bg-[#4a4fed]" />
-                  )}
-                </button>
-                <button
-                  className="relative bg-transparent border-none cursor-pointer px-0 pb-1"
-                  style={{
-                    fontSize: "16px",
-                    fontWeight: activeTab === "public" ? "var(--font-weight-semibold)" : "var(--font-weight-regular)",
-                    color: activeTab === "public" ? "var(--sidebar-primary)" : "var(--muted-foreground)",
-                  }}
-                  onClick={() => setActiveTab("public")}
-                >
-                  资源中心
-                  {activeTab === "public" && (
-                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[12px] h-[4px] rounded-[2px] bg-[#4a4fed]" />
-                  )}
-                </button>
+                {pickPublicMode ? (
+                  <p
+                    style={{
+                      fontSize: "18px",
+                      fontWeight: "var(--font-weight-semibold)",
+                      color: "var(--foreground)",
+                      lineHeight: "1.5",
+                      margin: 0,
+                    }}
+                  >
+                    公共资源
+                  </p>
+                ) : (
+                  <>
+                    <button
+                      className="relative cursor-pointer border-none bg-transparent px-0 pb-1"
+                      style={{
+                        fontSize: "16px",
+                        fontWeight: activeTab === "my" ? "var(--font-weight-semibold)" : "var(--font-weight-regular)",
+                        color: activeTab === "my" ? "var(--foreground)" : "var(--muted-foreground)",
+                      }}
+                      type="button"
+                      onClick={() => setActiveTab("my")}
+                    >
+                      我的资源
+                      {activeTab === "my" && (
+                        <div className="absolute bottom-0 left-1/2 h-[4px] w-[12px] -translate-x-1/2 rounded-[2px] bg-[#4a4fed]" />
+                      )}
+                    </button>
+                    <button
+                      className="relative cursor-pointer border-none bg-transparent px-0 pb-1"
+                      style={{
+                        fontSize: "16px",
+                        fontWeight: activeTab === "public" ? "var(--font-weight-semibold)" : "var(--font-weight-regular)",
+                        color: activeTab === "public" ? "var(--sidebar-primary)" : "var(--muted-foreground)",
+                      }}
+                      type="button"
+                      onClick={() => setActiveTab("public")}
+                    >
+                      公共资源
+                      {activeTab === "public" && (
+                        <div className="absolute bottom-0 left-1/2 h-[4px] w-[12px] -translate-x-1/2 rounded-[2px] bg-[#4a4fed]" />
+                      )}
+                    </button>
+                  </>
+                )}
               </div>
 
               {/* Search */}
               <div className="flex items-center gap-4">
                 <div
-                  className="flex items-center gap-[6px] h-[32px] px-3 rounded-[16px] bg-white"
+                  className="flex h-[32px] items-center gap-[6px] rounded-[16px] bg-white px-3"
                   style={{ border: "1px solid #cfd5e8" }}
                 >
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="在我的资源中搜索"
-                    className="border-none outline-none bg-transparent w-[160px]"
+                    placeholder={pickPublicMode ? "在公共资源中搜索" : "在我的资源中搜索"}
+                    className="w-[160px] border-none bg-transparent outline-none"
                     style={{
                       fontSize: "14px",
                       fontWeight: "var(--font-weight-regular)",
@@ -344,10 +388,10 @@ export function ResourceBrowserDialog({
             </div>
 
             {/* Table */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="min-h-0 flex-1 overflow-y-auto">
               {/* Table header */}
-              <div className="flex items-center bg-[#f4f7fe] sticky top-0 z-10">
-                <div className="flex items-center justify-center w-[44px] h-[44px] shrink-0">
+              <div className="sticky top-0 z-10 flex items-center bg-[#f4f7fe]">
+                <div className="flex h-[44px] w-[44px] shrink-0 items-center justify-center">
                   <div
                     className="w-[16px] h-[16px] rounded-[3px] flex items-center justify-center cursor-pointer"
                     style={{
@@ -372,9 +416,11 @@ export function ResourceBrowserDialog({
                 <div className="w-[120px] shrink-0 px-4 py-3">
                   <span style={{ fontSize: "14px", fontWeight: "var(--font-weight-regular)", color: "#444963" }}>更新日期</span>
                 </div>
-                <div className="w-[200px] shrink-0 px-4 py-3">
-                  <span style={{ fontSize: "14px", fontWeight: "var(--font-weight-regular)", color: "#444963" }}>操作</span>
-                </div>
+                {!pickPublicMode ? (
+                  <div className="w-[200px] shrink-0 px-4 py-3">
+                    <span style={{ fontSize: "14px", fontWeight: "var(--font-weight-regular)", color: "#444963" }}>操作</span>
+                  </div>
+                ) : null}
               </div>
 
               {/* Table body */}
@@ -427,26 +473,27 @@ export function ResourceBrowserDialog({
                       </span>
                     </div>
 
-                    {/* Actions */}
-                    <div className="w-[200px] shrink-0 flex items-center gap-6 px-4 py-3">
-                      <span className="cursor-pointer" onClick={() => toggleStar(item.id)}>
-                        {starredMap[item.id] ? <StarFilled /> : <StarOutline />}
-                      </span>
-                      {item.actions.map((action) => (
-                        <span
-                          key={action}
-                          className="cursor-pointer"
-                          style={{ fontSize: "14px", fontWeight: "var(--font-weight-regular)", color: "#4a4fed" }}
-                          onClick={() => {
-                            if (action === "加入") handleAdd(item);
-                            else showToast(`${action}功能开发中`, "info");
-                          }}
-                        >
-                          {action}
+                    {!pickPublicMode ? (
+                      <div className="flex w-[200px] shrink-0 items-center gap-6 px-4 py-3">
+                        <span className="cursor-pointer" onClick={() => toggleStar(item.id)}>
+                          {starredMap[item.id] ? <StarFilled /> : <StarOutline />}
                         </span>
-                      ))}
-                      <MoreIcon />
-                    </div>
+                        {item.actions.map((action) => (
+                          <span
+                            key={action}
+                            className="cursor-pointer"
+                            style={{ fontSize: "14px", fontWeight: "var(--font-weight-regular)", color: "#4a4fed" }}
+                            onClick={() => {
+                              if (action === "加入") handleAdd(item);
+                              else showToast(`${action}功能开发中`, "info");
+                            }}
+                          >
+                            {action}
+                          </span>
+                        ))}
+                        <MoreIcon />
+                      </div>
+                    ) : null}
 
                     {/* Bottom border */}
                     <div className="absolute inset-0 pointer-events-none" style={{ boxShadow: "inset 0px -0.5px 0px 0px #e1e5f2" }} />
@@ -454,6 +501,34 @@ export function ResourceBrowserDialog({
                 );
               })}
             </div>
+
+            {pickPublicMode ? (
+              <div
+                className="flex shrink-0 items-center justify-end gap-3 border-t border-solid px-6 py-4"
+                style={{ borderColor: "#e9ecf5" }}
+              >
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="flex h-9 w-[96px] cursor-pointer items-center justify-center rounded-[18px] bg-white transition-colors hover:bg-[#f8f9fc]"
+                  style={{ border: "1px solid #dfe3f0" }}
+                >
+                  <span style={{ fontSize: "14px", fontWeight: "var(--font-weight-medium)", color: "#444963", lineHeight: "1.5" }}>
+                    取消
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePickPublicConfirm}
+                  className="flex h-9 min-w-[96px] cursor-pointer items-center justify-center rounded-[18px] border-none px-5 transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: "#6574fc" }}
+                >
+                  <span style={{ fontSize: "14px", fontWeight: "var(--font-weight-medium)", color: "white", lineHeight: "1.5" }}>
+                    确认
+                  </span>
+                </button>
+              </div>
+            ) : null}
           </motion.div>
         </motion.div>
       )}

@@ -14,7 +14,7 @@ const routeTitles: Record<string, string> = {
   "/dashboard/today-board": "今日看板",
   "/dashboard/supervisor-management": "督学管理",
   "/dashboard/user-info": "用户信息",
-  "/dashboard/question-bank": "资源中心",
+  "/dashboard/question-bank": "公共资源",
   "/dashboard/homework-bank": "作业",
   "/dashboard/course-bank": "课程",
   "/dashboard/ai-tools": "智能工具",
@@ -22,6 +22,8 @@ const routeTitles: Record<string, string> = {
   "/dashboard/trial-accounts": "体验账号管理",
   "/dashboard/course-preview": "课程预览",
   "/dashboard/exercise-preview": "练习预览",
+  "/dashboard/schedule-plan": "排课计划",
+  "/dashboard/community": "消息",
 };
 
 const LoadingFallback = () => (
@@ -40,8 +42,19 @@ const LoadingFallback = () => (
 
 function DashboardLayout() {
   const location = useLocation();
-  const pageTitle = routeTitles[location.pathname] || "诊断管理";
-  const hideDefaultTitle = location.pathname === "/dashboard/onboarding" || location.pathname === "/dashboard/diagnosis" || location.pathname === "/dashboard" || location.pathname === "/dashboard/question-bank" || location.pathname === "/dashboard/homework-bank" || location.pathname === "/dashboard/course-bank";
+  const isSchedulePlanRoute = location.pathname.startsWith("/dashboard/schedule-plan/");
+  const pageTitle = routeTitles[location.pathname] || (isSchedulePlanRoute ? "排课计划" : "诊断管理");
+  const hideDefaultTitle =
+    location.pathname === "/dashboard/onboarding" ||
+    location.pathname === "/dashboard/diagnosis" ||
+    location.pathname === "/dashboard/user-info" ||
+    location.pathname === "/dashboard/supervisor-management" ||
+    location.pathname === "/dashboard" ||
+    location.pathname === "/dashboard/question-bank" ||
+    location.pathname === "/dashboard/homework-bank" ||
+    location.pathname === "/dashboard/course-bank" ||
+    location.pathname === "/dashboard/community" ||
+    isSchedulePlanRoute;
 
   return (
     <div className="relative flex h-screen overflow-hidden">
@@ -49,25 +62,32 @@ function DashboardLayout() {
       <div className="absolute inset-0 z-0 pointer-events-none">
         <BackgroundFrame />
       </div>
-      <div className="relative z-10 flex w-full h-full">
-      <div className="p-[16px] pb-[16px] pr-0 shrink-0">
-        <Sidebar />
-      </div>
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <div className="relative z-10 flex h-full w-full">
+      {!isSchedulePlanRoute ? (
+        <div className="shrink-0 pl-0 pb-0 pr-0 pt-0">
+          <Sidebar />
+        </div>
+      ) : null}
+      <main
+        className={`flex min-h-0 flex-1 flex-col overflow-hidden pr-4 lg:pr-6${isSchedulePlanRoute ? " pl-4 lg:pl-6" : ""}`}
+      >
         {!hideDefaultTitle && (
-          <div className="px-4 lg:px-6 pt-4 lg:pt-6">
+          <div className="flex h-[68px] items-center">
             <h2
+              className="min-w-0"
               style={{
-                fontSize: "var(--text-h3)",
-                fontWeight: "var(--font-weight-bold)",
-                color: "var(--card-foreground)",
+                fontSize: "var(--text-lg)",
+                fontWeight: "var(--font-weight-page-title)",
+                lineHeight: "30px",
+                letterSpacing: 0,
+                color: "var(--page-title-muted)",
               }}
             >
               {pageTitle}
             </h2>
           </div>
         )}
-        <div className="flex-1 overflow-y-auto p-4 lg:p-6 flex flex-col">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pb-0">
           <Suspense fallback={<LoadingFallback />}>
             <Outlet />
           </Suspense>
@@ -165,6 +185,14 @@ const router = createBrowserRouter([
         lazy: () => import("./pages/AIToolsPage").then(m => ({ Component: m.AIToolsPage })),
       },
       {
+        path: "community",
+        lazy: () => import("./pages/CommunityPage").then(m => ({ Component: m.CommunityPage })),
+      },
+      {
+        path: "schedule-plan/:diagnosisId",
+        lazy: () => import("./pages/SchedulePlanPage").then(m => ({ Component: m.SchedulePlanPage })),
+      },
+      {
         path: "sop-management",
         lazy: () => import("./pages/SOPManagementPage").then(m => ({ Component: m.SOPManagementPage })),
       },
@@ -188,12 +216,18 @@ export default function App() {
   return (
     <>
       <Toaster
-        position="top-center"
+        position="bottom-center"
         toastOptions={{
           unstyled: true,
           className: "flex justify-center",
+          style: {
+            left: 0,
+            right: 0,
+            width: "fit-content",
+            margin: "0 auto",
+          },
         }}
-        style={{ top: 20 }}
+        style={{ bottom: "20vh" }}
       />
       <RouterProvider router={router} />
     </>

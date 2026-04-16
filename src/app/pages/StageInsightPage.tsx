@@ -1,6 +1,6 @@
 export function StageInsightPage() {
   return (
-    <div className="bg-card rounded-[var(--radius)] shadow-[var(--elevation-sm)] p-6 flex-1 flex flex-col min-h-0">
+    <div className="dashboard-page-panel p-4 flex-1 flex flex-col min-h-0">
       
       <p
         className="text-muted-foreground text-center flex-1 flex items-center justify-center"

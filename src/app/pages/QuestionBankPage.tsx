@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router";
 import svgPaths from "../../imports/svg-hrhi0uopqy";
 import svgPaths2 from "../../imports/svg-d0d4r2dbuk";
 import IcUpload from "../../imports/IcUpload14";
 import svgPathsUpload from "../../imports/svg-pzealc5p9r";
 import svgPathsDialog from "../../imports/svg-71glyoueoc";
-import IcNavBack from "../../imports/IcNavBack";
+import { showToast } from "../components/CustomToast";
+import { PublishConfirmDialog } from "../components/PublishConfirmDialog";
 
 // ─── Types ───
 interface TreeNode {
@@ -14,7 +14,7 @@ interface TreeNode {
   children?: TreeNode[];
 }
 
-interface Question {
+export interface Question {
   id: string;
   number: string;
   content: string;
@@ -291,7 +291,7 @@ const filterOptionsMap: Record<string, string[]> = {
   "题型": ["全部", "选择题", "填空题", "解答题", "判断题"],
   "难度": ["全部", "简单", "中等", "较难", "困难"],
   "地区": ["全部", "全国", "北京", "上海", "浙江", "江苏"],
-  "年份": ["全部", "2026", "2025", "2024", "2023", "2022"],
+  "布置": ["布置", "已布置", "未布置"],
   "按最新排序": ["按最新排序", "按最早排序", "按难度排序", "按热度排序"],
 };
 
@@ -1268,7 +1268,14 @@ function MyResourcesTab({ selectedIds, setSelectedIds }: { selectedIds: Set<stri
 }
 
 // ─── Public Resources Tab ───
-function PublicResourcesTab() {
+function PublicResourcesTab({
+  questions,
+  setQuestions,
+}: {
+  questions: Question[];
+  setQuestions: React.Dispatch<React.SetStateAction<Question[]>>;
+}) {
+  const [searchText, setSearchText] = useState("");
   const [treeMode, setTreeMode] = useState<"chapter" | "knowledge">("chapter");
   const defaultExpanded: Record<string, string[]> = {
     chapter: ["ch1", "ch1-1", "ch1-1-1"],
@@ -1278,7 +1285,6 @@ function PublicResourcesTab() {
     new Set(defaultExpanded.chapter)
   );
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>("ch1");
-  const [questions, setQuestions] = useState<Question[]>(mockQuestions);
   const [subjectDropdownOpen, setSubjectDropdownOpen] = useState(false);
   const subjectRef = useRef<HTMLDivElement>(null);
 
@@ -1351,64 +1357,41 @@ function PublicResourcesTab() {
   return (
     <div className="flex flex-col gap-0 flex-1 min-h-0">
       {/* Content area */}
-      <div className="flex gap-[16px] flex-1 pt-[16px] min-h-0">
+      <div className="flex flex-1 min-h-0 overflow-hidden rounded-t-[16px] bg-white">
         {/* Tree sidebar */}
         <div
-          className="shrink-0 w-[234px] bg-white rounded-[16px] flex flex-col overflow-hidden"
-          style={{ border: "1px solid #e9ecf5" }}
+          className="shrink-0 w-[234px] flex flex-col overflow-hidden border-r border-solid border-[#e9ecf5]"
         >
           <div className="flex flex-col gap-[12px] p-[16px] pb-[24px] flex-1 overflow-y-auto scrollbar-thin" style={{ scrollbarGutter: "stable" }}>
             {/* Tree mode toggle */}
-            <div
-              className="relative flex w-full rounded-[6px] p-[2px]"
-              style={{ backgroundColor: "rgba(244, 247, 254, 0.6)" }}
-            >
-              {/* Sliding indicator */}
-              <div
-                className="absolute top-[2px] bottom-[2px] rounded-[5px] bg-white transition-all duration-200 ease-in-out"
-                style={{
-                  width: "calc(50% - 2px)",
-                  left: treeMode === "chapter" ? "2px" : "calc(50%)",
-                  boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.08)",
-                }}
-              />
+            <div className="flex w-full items-start gap-[2px]">
               <button
-                className="relative z-[1] flex-1 flex items-center justify-center py-[6px] rounded-[5px] cursor-pointer bg-transparent"
+                className="flex flex-1 cursor-pointer items-center justify-center rounded-[4px] bg-transparent px-[12px] py-[2px]"
                 onClick={() => { setTreeMode("chapter"); setExpandedIds(new Set(defaultExpanded.chapter)); setSelectedNodeId("ch1-1-1-1"); }}
               >
                 <span
                   style={{
-                    fontSize: "var(--text-base)",
-                    fontWeight:
-                      treeMode === "chapter"
-                        ? "var(--font-weight-medium)"
-                        : "var(--font-weight-regular)",
-                    color:
-                      treeMode === "chapter"
-                        ? "var(--sidebar-primary)"
-                        : "var(--muted-foreground)",
+                    fontSize: 14,
+                    fontWeight: treeMode === "chapter" ? 600 : 400,
+                    color: treeMode === "chapter" ? "#4a4fed" : "#838bab",
                     lineHeight: "1.5",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   按章节
                 </span>
               </button>
               <button
-                className="relative z-[1] flex-1 flex items-center justify-center py-[6px] rounded-[5px] cursor-pointer bg-transparent"
+                className="flex flex-1 cursor-pointer items-center justify-center rounded-[4px] bg-transparent px-[12px] py-[2px]"
                 onClick={() => { setTreeMode("knowledge"); setExpandedIds(new Set(defaultExpanded.knowledge)); setSelectedNodeId("k1-1-1"); }}
               >
                 <span
                   style={{
-                    fontSize: "var(--text-base)",
-                    fontWeight:
-                      treeMode === "knowledge"
-                        ? "var(--font-weight-medium)"
-                        : "var(--font-weight-regular)",
-                    color:
-                      treeMode === "knowledge"
-                        ? "var(--sidebar-primary)"
-                        : "var(--muted-foreground)",
+                    fontSize: 14,
+                    fontWeight: treeMode === "knowledge" ? 600 : 400,
+                    color: treeMode === "knowledge" ? "#4a4fed" : "#838bab",
                     lineHeight: "1.5",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   按知识点
@@ -1499,8 +1482,7 @@ function PublicResourcesTab() {
 
         {/* Questions area */}
         <div
-          className="flex-1 bg-white rounded-[16px] flex flex-col overflow-hidden min-h-0"
-          style={{ border: "1px solid #e9ecf5" }}
+          className="flex-1 flex flex-col overflow-hidden min-h-0"
         >
           <div className="flex flex-col gap-[16px] p-[20px] flex-1 overflow-y-auto scrollbar-thin">
             {/* Filters + Results count (sticky) */}
@@ -1515,9 +1497,39 @@ function PublicResourcesTab() {
                   <FilterButton label="题型" />
                   <FilterButton label="难度" />
                   <FilterButton label="地区" />
-                  <FilterButton label="年份" />
+                  <FilterButton label="布置" />
                 </div>
-                <FilterButton label="按最新排序" />
+                <div className="flex items-center gap-[12px]">
+                  <div
+                    className="flex h-[32px] items-center gap-[6px] rounded-[16px] bg-white px-[12px]"
+                    style={{ border: "1px solid #cfd5e8" }}
+                  >
+                    <input
+                      className="w-[190px] min-w-0 bg-transparent outline-none"
+                      placeholder="在公共试题资源中搜索"
+                      value={searchText}
+                      onChange={(e) => setSearchText(e.target.value)}
+                      style={{
+                        fontSize: "var(--text-base)",
+                        fontWeight: "var(--font-weight-regular)",
+                        color: "var(--card-foreground)",
+                        lineHeight: "1.5",
+                      }}
+                    />
+                    <SearchIcon />
+                  </div>
+                  <span
+                    className="cursor-pointer"
+                    style={{
+                      fontSize: "var(--text-base)",
+                      fontWeight: "var(--font-weight-regular)",
+                      color: "#444963",
+                      lineHeight: "1.5",
+                    }}
+                  >
+                    按最新排序
+                  </span>
+                </div>
               </div>
               <div className="flex gap-[8px] items-center py-[12px]">
                 <span
@@ -1561,147 +1573,298 @@ function PublicResourcesTab() {
   );
 }
 
-// ─── Main Page ───
-export function QuestionBankPage() {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"my" | "public">("public");
+// ─── 公共资源：整页（侧栏资源中心）与布置页弹窗共用 ───
+export interface PublicQuestionResourceWorkspaceProps {
+  variant: "page" | "modal";
+  onClose?: () => void;
+  /** 弹窗内点「确认」时回传已「加入」的试题 */
+  onConfirm?: (questions: Question[]) => void;
+}
+
+export function PublicQuestionResourceWorkspace({
+  variant,
+  onClose,
+  onConfirm,
+}: PublicQuestionResourceWorkspaceProps) {
   const [searchText, setSearchText] = useState("");
+  const [selectedStage, setSelectedStage] = useState("高中");
+  const [stageDropdownOpen, setStageDropdownOpen] = useState(false);
+  const stageRef = useRef<HTMLDivElement>(null);
   const [selectedSubject, setSelectedSubject] = useState("数学");
   const [subjectDropdownOpen, setSubjectDropdownOpen] = useState(false);
   const subjectRef = useRef<HTMLDivElement>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  /** 进入时默认无「已加入」，无已选时主按钮置灰 */
+  const [publicQuestions, setPublicQuestions] = useState<Question[]>(() =>
+    mockQuestions.map((q) => ({ ...q, joined: false })),
+  );
+  const publicJoinedCount = publicQuestions.filter((q) => q.joined).length;
+  const [showPublishDialog, setShowPublishDialog] = useState(false);
 
+  const stages = ["小学", "初中", "高中"];
   const subjects = ["数学", "语文", "英语", "物理", "化学", "生物"];
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (subjectRef.current && !subjectRef.current.contains(e.target as Node)) {
-        setSubjectDropdownOpen(false);
-      }
+      const t = e.target as Node;
+      if (stageRef.current && !stageRef.current.contains(t)) setStageDropdownOpen(false);
+      if (subjectRef.current && !subjectRef.current.contains(t)) setSubjectDropdownOpen(false);
     };
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
+  const handlePrimaryAction = () => {
+    if (variant !== "modal") return;
+    if (publicJoinedCount === 0) {
+      showToast("请先加入试题", "warning");
+      return;
+    }
+    onConfirm?.(publicQuestions.filter((q) => q.joined));
+    onClose?.();
+  };
+
+  const primaryLabel = variant === "modal" ? "确认" : "去布置";
+
   return (
-    <div className="flex flex-col flex-1 min-h-0">
+    <div className="flex min-h-0 flex-1 flex-col">
       {/* Header */}
-      <div className="flex items-center h-[48px] shrink-0 mb-[4px]">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="shrink-0 size-[30px] cursor-pointer"
-          >
-            <IcNavBack />
-          </button>
+      <div className="flex h-[68px] shrink-0 items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <span
             style={{
-              fontSize: "var(--text-h3)",
-              fontWeight: "var(--font-weight-semibold)",
-              color: "var(--card-foreground)",
-              lineHeight: "1.5",
+              fontSize: "var(--text-lg)",
+              fontWeight: "var(--font-weight-medium)",
+              lineHeight: "30px",
+              color: "var(--page-title-muted)",
             }}
           >
             公共资源
           </span>
         </div>
 
-        <div className="flex items-center gap-[12px] ml-auto">
-            {/* Search */}
-            <div
-              className="flex items-center gap-[6px] h-[32px] px-[12px] rounded-[16px] bg-white"
-              style={{ border: "1px solid #cfd5e8" }}
-            >
-              <input
-                className="bg-transparent outline-none flex-1 w-[190px]"
-                placeholder="在公共试题资源中搜索"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                style={{
-                  fontSize: "var(--text-base)",
-                  fontWeight: "var(--font-weight-regular)",
-                  color: "var(--card-foreground)",
-                  lineHeight: "1.5",
-                }}
-              />
-              <SearchIcon />
-            </div>
-
-            {/* Subject selector */}
-            <div className="relative" ref={subjectRef}>
-              <button
-                className="flex gap-[6px] items-center h-[32px] px-[16px] rounded-[18px] cursor-pointer"
-                style={{ border: "1px solid #e9ecf5" }}
-                onClick={() => setSubjectDropdownOpen(!subjectDropdownOpen)}
-              >
-                <span
-                  style={{
-                    fontSize: "var(--text-base)",
-                    fontWeight: "var(--font-weight-medium)",
-                    color: "#444963",
-                    lineHeight: "1.5",
-                  }}
-                >
-                  {selectedSubject}
-                </span>
-                <ArrowDownIcon color="#444963" size={12} />
-              </button>
-              {subjectDropdownOpen && (
-                <div
-                  className="absolute right-0 top-[36px] bg-white rounded-[12px] p-[4px] z-50 min-w-[100px]"
-                  style={{ boxShadow: "0px 8px 32px rgba(16,18,25,0.08)" }}
-                >
-                  {subjects.map((s) => (
-                    <button
-                      key={s}
-                      className="w-full text-left px-[16px] py-[8px] rounded-[8px] cursor-pointer hover:bg-[rgba(235,241,255,0.5)]"
+        <div className="ml-auto flex min-w-0 flex-1 flex-wrap items-center justify-end gap-[12px]">
+            {variant === "page" && (
+              <>
+                {/* 学段 */}
+                <div className="relative" ref={stageRef}>
+                  <button
+                    type="button"
+                    className="flex h-[32px] cursor-pointer items-center gap-[6px] rounded-[18px] px-[16px]"
+                    style={{ border: "1px solid #e9ecf5" }}
+                    onClick={() => {
+                      setSubjectDropdownOpen(false);
+                      setStageDropdownOpen(!stageDropdownOpen);
+                    }}
+                  >
+                    <span
                       style={{
                         fontSize: "var(--text-base)",
-                        fontWeight:
-                          selectedSubject === s
-                            ? "var(--font-weight-medium)"
-                            : "var(--font-weight-regular)",
-                        color:
-                          selectedSubject === s
-                            ? "var(--sidebar-primary)"
-                            : "var(--card-foreground)",
-                      }}
-                      onClick={() => {
-                        setSelectedSubject(s);
-                        setSubjectDropdownOpen(false);
+                        fontWeight: "var(--font-weight-medium)",
+                        color: "#444963",
+                        lineHeight: "1.5",
                       }}
                     >
-                      {s}
-                    </button>
-                  ))}
+                      {selectedStage}
+                    </span>
+                    <ArrowDownIcon color="#444963" size={12} />
+                  </button>
+                  {stageDropdownOpen && (
+                    <div
+                      className="absolute right-0 top-[36px] z-50 min-w-[100px] rounded-[12px] bg-white p-[4px]"
+                      style={{ boxShadow: "0px 8px 32px rgba(16,18,25,0.08)" }}
+                    >
+                      {stages.map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          className="w-full cursor-pointer rounded-[8px] px-[16px] py-[8px] text-left hover:bg-[rgba(235,241,255,0.5)]"
+                          style={{
+                            fontSize: "var(--text-base)",
+                            fontWeight:
+                              selectedStage === s ? "var(--font-weight-medium)" : "var(--font-weight-regular)",
+                            color:
+                              selectedStage === s ? "var(--sidebar-primary)" : "var(--card-foreground)",
+                          }}
+                          onClick={() => {
+                            setSelectedStage(s);
+                            setStageDropdownOpen(false);
+                          }}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+
+                {/* Subject selector */}
+                <div className="relative" ref={subjectRef}>
+                  <button
+                    type="button"
+                    className="flex h-[32px] cursor-pointer items-center gap-[6px] rounded-[18px] px-[16px]"
+                    style={{ border: "1px solid #e9ecf5" }}
+                    onClick={() => {
+                      setStageDropdownOpen(false);
+                      setSubjectDropdownOpen(!subjectDropdownOpen);
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: "var(--text-base)",
+                        fontWeight: "var(--font-weight-medium)",
+                        color: "#444963",
+                        lineHeight: "1.5",
+                      }}
+                    >
+                      {selectedSubject}
+                    </span>
+                    <ArrowDownIcon color="#444963" size={12} />
+                  </button>
+                  {subjectDropdownOpen && (
+                    <div
+                      className="absolute right-0 top-[36px] bg-white rounded-[12px] p-[4px] z-50 min-w-[100px]"
+                      style={{ boxShadow: "0px 8px 32px rgba(16,18,25,0.08)" }}
+                    >
+                      {subjects.map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          className="w-full cursor-pointer rounded-[8px] px-[16px] py-[8px] text-left hover:bg-[rgba(235,241,255,0.5)]"
+                          style={{
+                            fontSize: "var(--text-base)",
+                            fontWeight:
+                              selectedSubject === s
+                                ? "var(--font-weight-medium)"
+                                : "var(--font-weight-regular)",
+                            color:
+                              selectedSubject === s
+                                ? "var(--sidebar-primary)"
+                                : "var(--card-foreground)",
+                          }}
+                          onClick={() => {
+                            setSelectedSubject(s);
+                            setSubjectDropdownOpen(false);
+                          }}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
+
+        {variant === "modal" && onClose ? (
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-[32px] w-[32px] shrink-0 cursor-pointer items-center justify-center rounded-[8px] border-none bg-transparent transition-colors hover:bg-[#f4f7fe]"
+            aria-label="关闭"
+          >
+            <svg className="block" width="14" height="14" viewBox="0 0 14.0237 14.0237" fill="none">
+              <path clipRule="evenodd" d={svgPathsUpload.p37c48700} fill="#646B8A" fillRule="evenodd" />
+            </svg>
+          </button>
+        ) : null}
       </div>
 
       {/* Tab content */}
-      <div className="flex-1 flex flex-col min-h-0">
-        <PublicResourcesTab />
+      <div className="flex min-h-0 flex-1 flex-col">
+        <PublicResourcesTab questions={publicQuestions} setQuestions={setPublicQuestions} />
       </div>
 
       {/* Bottom action bar - always visible */}
-      <div className="bg-white flex items-center justify-end gap-[12px] px-[24px] py-[16px] relative shrink-0">
-        <div aria-hidden className="absolute border-[#e9ecf5] border-solid border-t inset-0 pointer-events-none" />
-        <p className="relative shrink-0 mr-auto" style={{ fontSize: "var(--text-base)", fontWeight: "var(--font-weight-medium)", lineHeight: "1.5" }}>
+      <div className="relative flex shrink-0 items-center justify-end gap-[12px] bg-white px-[24px] py-[16px]">
+        <div aria-hidden className="pointer-events-none absolute inset-0 border-t border-solid border-[#e9ecf5]" />
+        <p className="relative mr-auto shrink-0" style={{ fontSize: "var(--text-base)", fontWeight: "var(--font-weight-medium)", lineHeight: "1.5" }}>
           <span style={{ color: "#444963" }}>已添加 </span>
-          <span style={{ color: "var(--primary)" }}>{selectedIds.size}</span>
+          <span style={{ color: "var(--primary)" }}>{publicJoinedCount}</span>
           <span style={{ color: "#444963" }}> 题</span>
         </p>
-        
-        <button
-          className={`flex items-center justify-center h-[36px] w-[100px] py-[8px] rounded-[18px] shrink-0 ${selectedIds.size > 0 ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
-          style={{ backgroundColor: selectedIds.size > 0 ? "var(--primary)" : "#C0C4D0" }}
-          disabled={selectedIds.size === 0}
-        >
-          <span style={{ fontSize: "var(--text-base)", fontWeight: "var(--font-weight-medium)", color: "white", lineHeight: "1.5" }}>去布置</span>
-        </button>
+
+        <div className="relative flex shrink-0 items-center gap-[12px]">
+          <button
+            type="button"
+            onClick={() => {
+              if (publicJoinedCount === 0 && selectedIds.size === 0) return;
+              setPublicQuestions((prev) => prev.map((q) => ({ ...q, joined: false })));
+              setSelectedIds(new Set());
+              showToast("已清空已选试题", "success");
+            }}
+            disabled={publicJoinedCount === 0 && selectedIds.size === 0}
+            className="flex h-[36px] w-[100px] cursor-pointer items-center justify-center rounded-[18px] border border-solid bg-white transition-colors hover:opacity-90 disabled:cursor-not-allowed"
+            style={{
+              borderColor:
+                publicJoinedCount > 0 || selectedIds.size > 0 ? "var(--primary)" : "#bbcbfc",
+            }}
+          >
+            <span
+              style={{
+                fontSize: "var(--text-base)",
+                fontWeight: "var(--font-weight-medium)",
+                color:
+                  publicJoinedCount > 0 || selectedIds.size > 0 ? "var(--primary)" : "#bbcbfc",
+                lineHeight: "1.5",
+                whiteSpace: "nowrap",
+              }}
+            >
+              清空
+            </span>
+          </button>
+          <button
+            type="button"
+            disabled={publicJoinedCount === 0}
+            onClick={() => {
+              if (publicJoinedCount === 0) return;
+              if (variant === "modal") {
+                handlePrimaryAction();
+              } else {
+                setShowPublishDialog(true);
+              }
+            }}
+            className="flex h-[36px] w-[100px] shrink-0 cursor-pointer items-center justify-center rounded-[18px] border-none transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:hover:opacity-100"
+            style={{
+              backgroundColor: publicJoinedCount > 0 ? "var(--primary)" : "#bbcbfc",
+            }}
+          >
+            <span
+              style={{
+                fontSize: "var(--text-base)",
+                fontWeight: "var(--font-weight-medium)",
+                color: "white",
+                lineHeight: "1.5",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {primaryLabel}
+            </span>
+          </button>
+        </div>
       </div>
+
+      {variant === "page" && (
+        <PublishConfirmDialog
+          open={showPublishDialog}
+          joinedCount={publicJoinedCount}
+          onCancel={() => setShowPublishDialog(false)}
+          onConfirm={({ taskName }) => {
+            setShowPublishDialog(false);
+            showToast(`已成功布置「${taskName}」，共 ${publicJoinedCount} 道试题`, "success");
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Main Page ───
+export function QuestionBankPage() {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <PublicQuestionResourceWorkspace variant="page" />
     </div>
   );
 }

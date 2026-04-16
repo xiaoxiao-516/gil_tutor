@@ -74,7 +74,7 @@ function SubjectTitleDropdown({
         <span
           style={{
             fontSize: "var(--text-h3)",
-            fontWeight: "var(--font-weight-semibold)",
+            fontWeight: "var(--font-weight-page-title)",
             color: "#101019",
           }}
         >
@@ -1203,13 +1203,15 @@ export function OnboardingPage() {
 
   return (
     <>
+      <div className="flex flex-col flex-1 min-h-0 pb-6">
       {/* Page title */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex h-[68px] shrink-0 items-center justify-between">
         <h2
           style={{
-            fontSize: "var(--text-h3)",
-            fontWeight: "var(--font-weight-bold)",
-            color: "var(--card-foreground)",
+            fontSize: "var(--text-lg)",
+            fontWeight: "var(--font-weight-medium)",
+            lineHeight: "30px",
+            color: "var(--page-title-muted)",
           }}
         >
           试听课管理
@@ -1236,7 +1238,7 @@ export function OnboardingPage() {
       </div>
 
       {/* Main content: tree + cards */}
-          <div className="flex gap-0 flex-1 min-h-0 rounded-[16px]" style={{ border: "1px solid #E9ECF5" }}>
+          <div className="flex gap-0 flex-1 min-h-0 rounded-[16px] bg-[#ffffff]">
             {/* Left panel: Knowledge tree */}
             <div className="w-[266px] shrink-0 flex flex-col min-h-0">
               <div className="flex-1 min-h-0 flex flex-col">
@@ -1359,10 +1361,9 @@ export function OnboardingPage() {
                           return (
                             <div
                               key={modIdx}
-                              className="rounded-[12px] w-full"
-                              style={{ backgroundColor: "#F4F7FE" }}
+                              className="flex items-center justify-between px-3 py-2 w-full h-[60px] rounded-[12px]"
+                              style={{ backgroundColor: "var(--dashboard-canvas)" }}
                             >
-                              <div className="flex items-center justify-between px-3 py-2 w-full h-[60px]">
                                 {/* Left: icon + info */}
                                 <div className="flex gap-[6px] items-start">
                                   <div className="flex items-center pt-[5px]">
@@ -1435,7 +1436,6 @@ export function OnboardingPage() {
                                     null
                                   )}
                                 </div>
-                              </div>
                             </div>
                           );
                         })
@@ -1449,6 +1449,7 @@ export function OnboardingPage() {
               </div>
             </div>
           </div>
+      </div>
     </>
   );
 }

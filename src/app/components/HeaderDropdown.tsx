@@ -24,7 +24,7 @@ export function HeaderDropdown({ label, value, options, onChange }: HeaderDropdo
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center justify-between h-[36px] w-[102px] px-4 rounded-[6px] cursor-pointer transition-colors hover:bg-[#F5F7FA]"
+        className="flex items-center justify-between h-[36px] w-[100px] px-[17px] rounded-[8px] cursor-pointer transition-colors hover:bg-[#F5F7FA]"
         style={{
           border: "1px solid #E9ECF5",
           backgroundColor: open ? "#F5F7FA" : "#ffffff",

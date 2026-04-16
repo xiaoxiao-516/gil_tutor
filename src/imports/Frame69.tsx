@@ -4,12 +4,9 @@ export default function Frame() {
       <svg className="absolute block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 1280 798">
         <g clipPath="url(#clip0_559_111)" id="Frame 69">
           <g id="Rectangle 346242146">
-            <path d="M0 0H1280V798H0V0Z" fill="var(--fill-0, white)" />
+            <path d="M0 0H1280V798H0V0Z" fill="#F4F7FE" />
             <path d="M0 0H1280V798H0V0Z" fill="url(#paint0_linear_559_111)" fillOpacity="0.5" />
           </g>
-          <ellipse cx="37.5" cy="113.5" fill="url(#paint1_radial_559_111)" id="Ellipse 4" opacity="0.2" rx="212.5" ry="212.5" transform="rotate(90 37.5 113.5)" />
-          <ellipse cx="138" cy="441" fill="url(#paint2_radial_559_111)" id="Ellipse 218" opacity="0.12" rx="116" ry="116" transform="rotate(90 138 441)" />
-          <circle cx="-4" cy="734" fill="url(#paint3_radial_559_111)" id="Ellipse 217" opacity="0.8" r="206" />
           <ellipse cx="1121.5" cy="-52" fill="url(#paint4_radial_559_111)" id="Ellipse 219" opacity="0.12" rx="167" ry="314.5" transform="rotate(90 1121.5 -52)" />
           <ellipse cx="937.5" cy="-69.5" fill="url(#paint5_radial_559_111)" id="Ellipse 220" opacity="0.8" rx="174.5" ry="188.5" transform="rotate(90 937.5 -69.5)" />
         </g>

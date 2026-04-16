@@ -290,7 +290,7 @@ export function ExercisePreviewPage() {
           className="flex-1"
           style={{
             fontSize: "20px",
-            fontWeight: "var(--font-weight-semibold)",
+            fontWeight: "var(--font-weight-page-title)",
             color: "#101019",
             lineHeight: "1.5",
           }}
@@ -334,7 +334,7 @@ export function ExercisePreviewPage() {
       <div className="flex-1 flex overflow-hidden p-0 gap-0">
         {/* Main card container */}
         <div
-          className="flex-1 bg-white border border-[#e9ecf5] flex overflow-hidden relative"
+          className="flex-1 bg-white flex overflow-hidden relative"
           style={{ margin: "16px 16px 16px 16px", borderRadius: "16px" }}
         >
           {/* Left sidebar - exercise groups */}
