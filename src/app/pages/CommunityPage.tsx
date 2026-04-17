@@ -16,6 +16,7 @@ import voiceOrbImg from "@/assets/images/voice-orb.webp";
 import surveyIllustrationImg from "@/assets/images/survey-illustration.png";
 import cardBgImg from "@/assets/images/card-bg.png";
 import interviewErrorImg from "@/assets/images/interview-error-illustration.png";
+import microphoneIconUrl from "@/assets/icons/麦克风.svg?url";
 
 /* ─── Mock 公告数据 ─── */
 type ContentBlock =
@@ -466,7 +467,6 @@ function SurveyIllustration() {
       src={surveyIllustrationImg}
       alt=""
       className="size-full object-contain"
-      style={{ mixBlendMode: "multiply" }}
       draggable={false}
     />
   );
@@ -530,6 +530,16 @@ function AgentInterviewFullScreen({ open, onClose }: { open: boolean; onClose: (
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose, resetInterview]);
+
+  /** 语音模式：mock 无流式输出，「回复」文案已一次性展示完后应进入可作答态，否则录制按钮会永远禁用 */
+  useEffect(() => {
+    if (stage !== "interview" || mode !== "voice") return;
+    if (aiStatus !== "replying" || isRecording) return;
+    const t = window.setTimeout(() => {
+      setAiStatus("waiting");
+    }, 1000);
+    return () => window.clearTimeout(t);
+  }, [stage, mode, aiStatus, isRecording, roundIndex]);
 
   const closeFlow = () => {
     resetInterview();
@@ -637,7 +647,7 @@ function AgentInterviewFullScreen({ open, onClose }: { open: boolean; onClose: (
   };
 
   const startRecording = async () => {
-    if (isRecording || aiStatus === "thinking") return;
+    if (isRecording || aiStatus !== "waiting") return;
 
     try {
       if (navigator?.mediaDevices?.getUserMedia) {
@@ -745,11 +755,11 @@ function AgentInterviewFullScreen({ open, onClose }: { open: boolean; onClose: (
                   </p>
                 </div>
 
-                <div className="pointer-events-none absolute" style={{ right: "60px", top: "90px", width: "231px", height: "231px" }}>
+                <div className="pointer-events-none absolute" style={{ right: "60px", top: "90px", width: "231px", height: "231px", zIndex: 0 }}>
                   <SurveyIllustration />
                 </div>
 
-                <div className="flex min-h-0 w-full flex-1" style={{ marginTop: "70px" }}>
+                <div className="relative flex min-h-0 w-full flex-1" style={{ marginTop: "70px", zIndex: 1 }}>
                   <div
                     className="flex w-full flex-1 flex-col items-center justify-center"
                     style={{
@@ -864,7 +874,7 @@ function AgentInterviewFullScreen({ open, onClose }: { open: boolean; onClose: (
                           className="h-[48px] w-full max-w-[652px] cursor-pointer border-none bg-transparent transition-opacity hover:opacity-70"
                           style={{ fontSize: "12px", fontWeight: 400, color: "#646B8A", borderRadius: "18px" }}
                         >
-                          {mode === "text" ? "切换语音输入" : "切换文字输入"}
+                          {mode === "text" ? "切换语音录制" : "切换文字输入"}
                         </button>
                       </div>
                     </>
@@ -884,23 +894,25 @@ function AgentInterviewFullScreen({ open, onClose }: { open: boolean; onClose: (
                             if (isRecording) stopRecording(false);
                             else startRecording();
                           }}
-                          disabled={aiStatus === "thinking"}
-                          className="flex h-[48px] w-[200px] items-center justify-center border-none text-white transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-65"
+                          disabled={!isRecording && aiStatus !== "waiting"}
+                          className="flex h-[48px] w-[200px] items-center justify-center border-none text-white transition-opacity hover:opacity-95 disabled:cursor-not-allowed"
                           style={{
                             fontSize: "16px",
                             fontWeight: 600,
                             borderRadius: "36px",
-                            background: aiStatus === "thinking"
-                              ? "#A7AECB"
-                              : "linear-gradient(to right, #3355FF 1.45%, #4DA6FF 98.55%)",
+                            background: "linear-gradient(to right, #3355FF 1.45%, #4DA6FF 98.55%)",
+                            opacity: isRecording || aiStatus === "waiting" ? 1 : 0.35,
                           }}
                         >
                           {isRecording ? (
                             `结束录制 ${formatRecordTime(recordSeconds)}`
-                          ) : aiStatus === "thinking" ? (
+                          ) : aiStatus !== "waiting" ? (
                             "处理中"
                           ) : (
-                            "开始录制"
+                            <span className="flex items-center justify-center gap-2">
+                              <img src={microphoneIconUrl} alt="" width={16} height={16} className="shrink-0" aria-hidden />
+                              开始录制
+                            </span>
                           )}
                         </button>
                         <button
