@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Check, X } from "lucide-react";
+import { Check, FileText, X } from "lucide-react";
 import { showToast } from "../components/CustomToast";
 import {
   AlertDialog,
@@ -1063,8 +1063,6 @@ function AnnouncementListItem({
 
 /* ─── 公告详情面板 ─── */
 function AnnouncementDetail({ item, onOpenInterview }: { item: Announcement; onOpenInterview: () => void }) {
-  const isInterviewEntry = item.surveyTitle?.includes("访谈");
-
   return (
     <div className="flex h-full flex-col overflow-y-auto bg-white">
       <div className="px-8 pt-6">
@@ -1144,22 +1142,35 @@ function AnnouncementDetail({ item, onOpenInterview }: { item: Announcement; onO
         })}
         {item.surveyTitle && (
           <a
-            href="#"
+            href={`https://survey.xiaolustudy.com/s/a3xK7mQ2/${item.id}`}
             onClick={(e) => {
               e.preventDefault();
               onOpenInterview();
             }}
-            className="mt-6 inline-flex items-center gap-1 transition-opacity hover:opacity-80"
+            className="mt-6 flex w-full max-w-full cursor-pointer items-center gap-3 rounded-[12px] px-4 py-3 no-underline transition-opacity hover:opacity-90"
             style={{
-              fontSize: "16px",
-              lineHeight: "1.75",
-              color: "#3370FF",
-              textDecoration: "underline",
-              textUnderlineOffset: "3px",
-              cursor: "pointer",
+              backgroundColor: "#EEF2FF",
+              boxShadow: "inset 0 0 0 1px rgba(101, 116, 252, 0.12)",
             }}
           >
-            https://survey.xiaolustudy.com/s/a3xK7mQ2/{item.id}
+            <span
+              className="flex size-10 shrink-0 items-center justify-center rounded-full"
+              style={{ backgroundColor: "#6574FC" }}
+              aria-hidden
+            >
+              <FileText className="size-[18px] text-white" strokeWidth={1.75} />
+            </span>
+            <span
+              className="min-w-0 flex-1 text-left"
+              style={{
+                fontSize: "16px",
+                fontWeight: 600,
+                color: "#5C68F6",
+                lineHeight: "1.5",
+              }}
+            >
+              {item.surveyTitle}
+            </span>
           </a>
         )}
       </div>

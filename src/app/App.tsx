@@ -12,6 +12,7 @@ const routeTitles: Record<string, string> = {
   "/dashboard/onboarding": "试听课管理",
   "/dashboard/task-management": "布置",
   "/dashboard/today-board": "今日看板",
+  "/dashboard/learning-report": "学情报告",
   "/dashboard/supervisor-management": "督学管理",
   "/dashboard/user-info": "用户信息",
   "/dashboard/question-bank": "公共资源",
@@ -49,6 +50,7 @@ function DashboardLayout() {
     location.pathname === "/dashboard/diagnosis" ||
     location.pathname === "/dashboard/user-info" ||
     location.pathname === "/dashboard/supervisor-management" ||
+    location.pathname === "/dashboard/learning-report" ||
     location.pathname === "/dashboard" ||
     location.pathname === "/dashboard/question-bank" ||
     location.pathname === "/dashboard/homework-bank" ||
@@ -159,6 +161,10 @@ const router = createHashRouter([
       {
         path: "today-board",
         lazy: () => import("./pages/TodayBoardPage").then(m => ({ Component: m.TodayBoardPage })),
+      },
+      {
+        path: "learning-report",
+        lazy: () => import("./pages/LearningReportPage").then(m => ({ Component: m.LearningReportPage })),
       },
       {
         path: "supervisor-management",

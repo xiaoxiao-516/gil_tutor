@@ -62,6 +62,26 @@ export interface SchedulePlanProfile {
   subject: string;
 }
 
+/** 排课计划页「排课诊断详情」卡片用：诊断会话元信息 */
+export interface DiagnosisSessionMeta {
+  createdAt: string;
+  diagnosisUrl: string;
+  /** 与列表诊断状态一致，未排课场景一般为已完成 */
+  statusLabel: "已完成" | "进行中" | "待开始";
+}
+
+/**
+ * 未生成排课计划时展示的诊断信息（链接中的 planId 与路由 diagnosisId 对齐，便于联调）
+ */
+export function getDiagnosisSessionMeta(diagnosisId: string, _profile: SchedulePlanProfile): DiagnosisSessionMeta {
+  const planId = diagnosisId || "879841587327700";
+  return {
+    createdAt: "2026/04/24 19:47",
+    diagnosisUrl: `https://srm.kmtest.xiaoluxue.cn/h5/evaluator?planId=${encodeURIComponent(planId)}`,
+    statusLabel: "已完成",
+  };
+}
+
 export interface SchedulePlanDraft {
   materialVersionId: string;
   bookLabels: string[];

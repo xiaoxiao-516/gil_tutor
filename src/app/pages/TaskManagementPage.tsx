@@ -9,6 +9,8 @@ import IcPractice from "../../imports/Ic练习16";
 import IcClose from "../../imports/Ic关闭16";
 import { CustomSelect } from "../components/CustomSelect";
 import { showToast } from "../components/CustomToast";
+import { SchedulingDiagnosisDetailSection } from "../components/SchedulingDiagnosisDetailSection";
+import { getDiagnosisPlan, getDiagnosisSessionMeta } from "../mock/schedulePlanMock";
 import svgPaths from "../../imports/svg-r57qxbmmrt";
 import bottomBarSvgPaths from "../../imports/svg-3g6fnutf14";
 import recentSvgPaths from "../../imports/svg-fnul1acw7u";
@@ -28,6 +30,7 @@ const students = [
   { label: "张子涵 · 高一", value: "zzh" },
   { label: "王梓轩 · 初三", value: "wzx" },
   { label: "赵佳宁 · 初二", value: "zjn" },
+  { label: "曹操 · 高二", value: "cc" },
 ];
 
 const subjectOptions = [
@@ -41,6 +44,7 @@ const studentMeta: Record<string, { remaining: number; total: number; planNearCo
   zzh: { remaining: 42, total: 100, planNearComplete: false },
   wzx: { remaining: 1, total: 100, planNearComplete: true },
   zjn: { remaining: 88, total: 100, planNearComplete: false, noDiagnosis: true },
+  cc: { remaining: 60, total: 100, planNearComplete: false },
 };
 
 interface TaskItem {
@@ -381,8 +385,8 @@ export interface TaskManagementPageProps {
 export function TaskManagementPage({ appearance = "default" }: TaskManagementPageProps) {
   const navigate = useNavigate();
   const studio = appearance === "studio";
-  const [selectedStudent, setSelectedStudent] = useState("liyt");
-  const [selectedSubject, setSelectedSubject] = useState("数学");
+  const [selectedStudent, setSelectedStudent] = useState("cc");
+  const [selectedSubject, setSelectedSubject] = useState("物理");
   const [taskDate, setTaskDate] = useState("");
   const [studyMinutes, setStudyMinutes] = useState("60");
   const [tasks, setTasks] = useState<TaskItem[]>(() => {
@@ -418,6 +422,9 @@ export function TaskManagementPage({ appearance = "default" }: TaskManagementPag
   const [showHomeworkNameDialog, setShowHomeworkNameDialog] = useState(false);
   const [pendingHomeworkItems, setPendingHomeworkItems] = useState<{ id: string; content: string; number: string }[]>([]);
   const [homeworkTaskName, setHomeworkTaskName] = useState("");
+  const planSectionRef = useRef<HTMLDivElement | null>(null);
+  /** 诊断专视图下仅顶栏+诊断卡；展开后显示布置清单/学习规划/侧栏/底栏 */
+  const [assignWorkspaceExpanded, setAssignWorkspaceExpanded] = useState(false);
 
   const meta = selectedStudent ? studentMeta[selectedStudent] : null;
   const hasStudent = !!selectedStudent && !!selectedSubject;
@@ -432,6 +439,10 @@ export function TaskManagementPage({ appearance = "default" }: TaskManagementPag
     setTaskDate(`${yyyy}-${mm}-${dd}`);
   }, []);
 
+  useEffect(() => {
+    setAssignWorkspaceExpanded(false);
+  }, [selectedStudent, selectedSubject]);
+
   const targetMinutes = useMemo(() => {
     const m = parseInt(studyMinutes, 10);
     return Number.isFinite(m) && m > 0 ? m : 60;
@@ -445,6 +456,37 @@ export function TaskManagementPage({ appearance = "default" }: TaskManagementPag
     if (!st?.label || !selectedSubject) return "—";
     return `${st.label} · ${selectedSubject}`;
   }, [selectedStudent, selectedSubject]);
+
+  const assignLayoutDiagnosisId = `assign-${selectedStudent}-${selectedSubject}`;
+
+  /** 已有诊断且该组合下尚未生成排课计划 → 在学科后展示「（未排课）」纯文案 */
+  const showUnscheduledFilterTag = useMemo(
+    () => hasStudent && !noDiagnosis && !getDiagnosisPlan(assignLayoutDiagnosisId),
+    [hasStudent, noDiagnosis, assignLayoutDiagnosisId],
+  );
+
+  /** 布置页 · 与当前学生/学科绑定的诊断链接（演示） */
+  const assignDiagnosisSession = useMemo(
+    () =>
+      getDiagnosisSessionMeta(assignLayoutDiagnosisId, {
+        studentName: "",
+        grade: "",
+        subject: selectedSubject,
+      }),
+    [assignLayoutDiagnosisId, selectedSubject],
+  );
+
+  const goToSchedulePlanFromLayout = useCallback(() => {
+    const st = students.find((s) => s.value === selectedStudent);
+    const label = st?.label ?? "·";
+    const parts = label.split(" · ");
+    const studentName = parts[0] ?? label;
+    const grade = parts[1] ?? "";
+    navigate(
+      `/dashboard/schedule-plan/${encodeURIComponent(assignLayoutDiagnosisId)}`,
+      { state: { studentName, grade, subject: selectedSubject } },
+    );
+  }, [navigate, selectedStudent, selectedSubject, assignLayoutDiagnosisId]);
 
   const completedPlanItems = allPlanItems.filter((p) => p.completed);
   const uncompletedPlanItems = allPlanItems.filter((p) => !p.completed);
@@ -579,6 +621,7 @@ export function TaskManagementPage({ appearance = "default" }: TaskManagementPag
                     placeholder="请选择学科"
                     size="sm"
                     tone={studio ? "default" : "canvas"}
+                    valueSuffix={showUnscheduledFilterTag ? "（未排课）" : undefined}
                   />
                 </div>
                 {meta && !noDiagnosis && (
@@ -639,7 +682,7 @@ export function TaskManagementPage({ appearance = "default" }: TaskManagementPag
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto scrollbar-thin p-6">
 
               {/* Warning banner when plan near complete */}
-              {meta?.planNearComplete && hasStudent && !noDiagnosis && (
+              {meta?.planNearComplete && hasStudent && !noDiagnosis && assignWorkspaceExpanded && (
                 <div
                   className="flex items-center justify-between mb-4 px-4 py-3 rounded-[6px]"
                   style={{ backgroundColor: "rgba(245,86,86,0.06)" }}
@@ -739,6 +782,39 @@ export function TaskManagementPage({ appearance = "default" }: TaskManagementPag
                 </div>
               ) : (
               <>
+              {!assignWorkspaceExpanded ? (
+                <>
+                  <SchedulingDiagnosisDetailSection
+                    showContextFilterBar={false}
+                    className="mb-2"
+                    studentLine={students.find((s) => s.value === selectedStudent)?.label ?? "—"}
+                    subject={selectedSubject}
+                    sessionMeta={assignDiagnosisSession}
+                    onGoToSchedule={goToSchedulePlanFromLayout}
+                  />
+                  <div className="mt-2 flex w-full justify-center">
+                    <button
+                      type="button"
+                      onClick={() => setAssignWorkspaceExpanded(true)}
+                      className="inline-flex h-9 cursor-pointer items-center justify-center rounded-[20px] border border-solid border-[#dfe3f0] bg-white px-4 transition-colors hover:bg-[#f8f9fc]"
+                      style={{ fontSize: 14, fontWeight: 500, color: "#4a4fed" }}
+                    >
+                      进入布置
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                <div className="mb-5 flex w-full items-center">
+                  <button
+                    type="button"
+                    onClick={() => setAssignWorkspaceExpanded(false)}
+                    className="inline-flex h-8 cursor-pointer items-center justify-center gap-1 rounded-[20px] border-none bg-transparent px-0 text-left transition-opacity hover:opacity-90"
+                    style={{ fontSize: 14, fontWeight: 500, color: "#646b8a" }}
+                  >
+                    <span aria-hidden>←</span> 返回诊断概览
+                  </button>
+                </div>
               {/* 布置清单（Figma 673:23215） */}
               <div className="flex w-full shrink-0 flex-col gap-[12px]">
                 {/* 标题行 */}
@@ -921,7 +997,7 @@ export function TaskManagementPage({ appearance = "default" }: TaskManagementPag
               </div>
 
               {/* 学习规划（Figma 659:22307：灰底圆角 + 分段 Tab + 网格） */}
-              <div>
+              <div ref={planSectionRef}>
                 {!hasStudent ? (
                   <div
                     className="flex flex-col items-center justify-center rounded-[8px] py-16"
@@ -1224,11 +1300,13 @@ export function TaskManagementPage({ appearance = "default" }: TaskManagementPag
                   </div>
                 )}
               </div>
+                </>
+                )}
               </>
-              )}
+            )}
           </div>
 
-          {!noDiagnosis && (
+          {!noDiagnosis && assignWorkspaceExpanded && (
               <div className="flex w-[200px] shrink-0 min-h-0 flex-col gap-[12px] border-l border-solid border-[#e9ecf5] bg-white p-[24px]">
                 <p
                   className="w-full shrink-0"
@@ -1286,7 +1364,7 @@ export function TaskManagementPage({ appearance = "default" }: TaskManagementPag
       </div>
       </div>
 
-      {!noDiagnosis && (
+      {!noDiagnosis && assignWorkspaceExpanded && (
       <div
         className={
           studio

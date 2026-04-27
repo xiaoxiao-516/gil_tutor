@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router";
 import { showToast } from "../components/CustomToast";
+import { SchedulingDiagnosisDetailSection } from "../components/SchedulingDiagnosisDetailSection";
 import { ScheduleRangeButton } from "../components/ScheduleRangeButton";
 import {
   ScheduleRangeForm,
@@ -11,6 +12,7 @@ import {
 import {
   getDiagnosisPlan,
   getDiagnosisPlanProfile,
+  getDiagnosisSessionMeta,
   getLearnedLessonIds,
   getMaterialVersions,
   saveDiagnosisPlan,
@@ -141,6 +143,8 @@ export function SchedulePlanPage() {
   const locationState = (location.state as DiagnosisLocationState | null) || null;
   const [planRecord, setPlanRecord] = useState(() => getDiagnosisPlan(diagnosisId));
   const profile = useMemo(() => getDefaultProfile(diagnosisId, locationState), [diagnosisId, locationState]);
+  const sessionMeta = useMemo(() => getDiagnosisSessionMeta(diagnosisId, profile), [diagnosisId, profile]);
+  const scheduleFormAnchorRef = useRef<HTMLDivElement | null>(null);
   const materialVersions = useMemo(() => getMaterialVersions(profile.grade, profile.subject), [profile.grade, profile.subject]);
   const [draft, setDraft] = useState<ScheduleRangeDraftValue>(() =>
     makeDraftFromPlan(getDiagnosisPlan(diagnosisId), materialVersions[0]?.id || ""),
@@ -397,62 +401,16 @@ export function SchedulePlanPage() {
       <div className="pb-8">
         {!activePlan ? (
           <div className="w-full rounded-[12px] bg-card p-8" style={{ border: "1px solid var(--border)" }}>
-            <div
-              className="grid gap-4 rounded-[8px] p-4 md:grid-cols-3"
-              style={{ backgroundColor: "#F8F9FC" }}
-            >
-              <div>
-                <div
-                  style={{
-                    fontSize: "var(--text-sm)",
-                    fontWeight: "var(--font-weight-regular)",
-                    color: "var(--muted-foreground)",
-                  }}
-                >
-                  学生姓名
-                </div>
-                <div
-                  className="mt-1"
-                  style={{
-                    fontSize: "var(--text-base)",
-                    fontWeight: "var(--font-weight-medium)",
-                    color: "var(--foreground)",
-                  }}
-                >
-                  {profile.studentName}
-                </div>
-              </div>
-              <div>
-                <div
-                  style={{
-                    fontSize: "var(--text-sm)",
-                    fontWeight: "var(--font-weight-regular)",
-                    color: "var(--muted-foreground)",
-                  }}
-                >
-                  年级
-                </div>
-                <div className="mt-1" style={{ fontSize: "var(--text-base)", fontWeight: "var(--font-weight-medium)" }}>
-                  {profile.grade}
-                </div>
-              </div>
-              <div>
-                <div
-                  style={{
-                    fontSize: "var(--text-sm)",
-                    fontWeight: "var(--font-weight-regular)",
-                    color: "var(--muted-foreground)",
-                  }}
-                >
-                  学科
-                </div>
-                <div className="mt-1" style={{ fontSize: "var(--text-base)", fontWeight: "var(--font-weight-medium)" }}>
-                  {profile.subject}
-                </div>
-              </div>
-            </div>
+            <SchedulingDiagnosisDetailSection
+              studentLine={`${profile.studentName} · ${profile.grade}`}
+              subject={profile.subject}
+              sessionMeta={sessionMeta}
+              onGoToSchedule={() => {
+                scheduleFormAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+            />
 
-            <div className="mt-8">
+            <div className="mt-8" ref={scheduleFormAnchorRef}>
               <ScheduleRangeForm
                 mode="setup"
                 materialVersions={displayMaterialVersions}

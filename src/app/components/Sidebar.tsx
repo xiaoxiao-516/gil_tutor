@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router";
 import type { LucideIcon } from "lucide-react";
 import {
+  BarChart3,
   ClipboardList,
   FileSearch,
   FolderOpen,
@@ -32,6 +33,7 @@ const NAV_ICON_MAP: Record<string, LucideIcon> = {
   体验账号管理: UserRound,
   布置: ClipboardList,
   学员管理: Users,
+  学情报告: BarChart3,
   用户信息: UserCircle,
   老师管理: GraduationCap,
   公共资源: FolderOpen,
@@ -76,6 +78,7 @@ const modules: ModuleGroup[] = [
     items: [
       { label: "布置", path: "/dashboard/task-management" },
       { label: "学员管理", path: "/dashboard/today-board" },
+      { label: "学情报告", path: "/dashboard/learning-report" },
     ],
   },
   {

@@ -13,6 +13,11 @@ interface CustomSelectProps {
   /** default=白底描边；canvas=#F4F7FE 无描边（布置页学生/学科）；plain=白底无描边（渐变条内时长） */
   tone?: "default" | "canvas" | "plain";
   leadingIcon?: ReactNode;
+  /**
+   * 选中文本后的补充文案，仍在按钮/筛选框内（不覆盖 value，不写入 options 的 value）
+   * 如学科后「（未排课）」
+   */
+  valueSuffix?: ReactNode;
 }
 
 export function CustomSelect({
@@ -24,6 +29,7 @@ export function CustomSelect({
   size = "md",
   tone = "default",
   leadingIcon,
+  valueSuffix,
 }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -134,7 +140,23 @@ export function CustomSelect({
           {leadingIcon ? (
             <span className="inline-flex shrink-0 items-center justify-center">{leadingIcon}</span>
           ) : null}
-          <span className="truncate">{selectedLabel}</span>
+          {valueSuffix ? (
+            <span className="flex min-w-0 flex-1 items-center gap-0 overflow-hidden">
+              <span className="min-w-0 flex-1 truncate text-left">{selectedLabel}</span>
+              <span
+                className="shrink-0"
+                style={{
+                  fontSize: size === "sm" ? 14 : undefined,
+                  color: "var(--muted-foreground)",
+                  fontWeight: "var(--font-weight-regular)",
+                }}
+              >
+                {valueSuffix}
+              </span>
+            </span>
+          ) : (
+            <span className="truncate">{selectedLabel}</span>
+          )}
         </span>
         <svg
           className="shrink-0 transition-transform duration-200"
